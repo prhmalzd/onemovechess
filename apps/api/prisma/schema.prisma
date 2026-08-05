@@ -1,0 +1,12 @@
+// Database models will be added alongside the first backend use case.
+// This file is intentionally model-free so the architecture can be scaffolded
+// without prematurely committing to persistence behavior.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
