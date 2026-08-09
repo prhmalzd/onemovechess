@@ -27,6 +27,7 @@ button { touch-action: manipulation; }
   flex-direction: column;
   min-height: 100dvh;
   padding: max(2.5rem, env(safe-area-inset-top)) max(1rem, env(safe-area-inset-right)) max(2.5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  position: relative;
 }
 
 .site-header { text-align: center; }
@@ -111,6 +112,35 @@ h1 {
   padding: .3rem;
   position: relative;
 }
+
+.account-area {
+  align-items: center;
+  display: flex;
+  font-family: Inter, Arial, sans-serif;
+  gap: .7rem;
+  justify-content: space-between;
+  left: max(1rem, env(safe-area-inset-left));
+  position: absolute;
+  right: max(1rem, env(safe-area-inset-right));
+  top: max(1rem, env(safe-area-inset-top));
+}
+
+.guest-label { color: #c9c2b4; font-size: .72rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.account-button {
+  background: transparent;
+  border: 1px solid rgba(247, 241, 228, .28);
+  color: #d8d2c4;
+  font-family: inherit;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  min-height: 2.5rem;
+  padding: .5rem .7rem;
+  text-transform: uppercase;
+}
+
+.account-button:disabled { cursor: not-allowed; opacity: .72; }
 
 .board-square--light { background: #e6d4ae; color: #24211b; }
 .board-square--dark { background: #806849; }
@@ -241,6 +271,8 @@ h1 {
   .destination-label { font-size: .55rem; letter-spacing: .025em; }
   .knight { font-size: clamp(2.2rem, 15vw, 3.2rem); }
   .secondary-action { margin-top: 1.2rem; width: 100%; }
+  .guest-label { font-size: .66rem; }
+  .account-button { min-height: 2.25rem; padding: .4rem .55rem; }
 }
 
 @media (max-width: 700px) {

@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { getAnonymousPlayer } from '@/features/game/services/player-identity';
 
 type Row = 'a' | 'b' | 'c' | 'd' | 'e';
 type Square = { column: number; row: Row };
@@ -27,6 +28,7 @@ function getLegalMoves(square: Square): Square[] {
 }
 
 export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }) {
+  const guest = useMemo(getAnonymousPlayer, []);
   const [knight, setKnight] = useState<Square>({ column: 3, row: 'c' });
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const legalMoves = useMemo(() => selectedSquare ? getLegalMoves(selectedSquare) : [], [selectedSquare]);
@@ -48,6 +50,10 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   }
 
   return <main className="main-page">
+    <div className="account-area">
+      <span className="guest-label">Playing as {guest.displayName}</span>
+      <button aria-label="Sign in or sign up, coming soon" className="account-button" disabled type="button">Sign in</button>
+    </div>
     <header className="site-header"><p className="eyebrow">A community-made game</p><h1>One Move Chess</h1></header>
     <section aria-label="Main menu" className="menu-section">
       <p className="instruction">Select the knight, then choose a highlighted square.</p>
