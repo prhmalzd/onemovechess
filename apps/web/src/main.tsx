@@ -1,9 +1,12 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
+import { registerSW } from 'virtual:pwa-register';
 import { ActiveBoardsPage } from '@/features/game/components/ActiveBoardsPage';
 import { PlayPage } from '@/features/game/components/PlayPage';
 import { MainPage } from '@/features/home/MainPage';
 import './styles.css';
+
+registerSW({ immediate: true });
 
 type AppPath = '/' | '/play' | '/active-boards';
 

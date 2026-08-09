@@ -41,10 +41,14 @@ function canPlayerMove(game: Game, playerId: PlayerId): boolean {
 function expireReservations(games: Game[]): Game[] {
   const currentTime = Date.now();
 
-  return games.map((game) => {
-    if (!game.reservation || isReservationActive(game, currentTime)) return game;
+  return games.flatMap((game) => {
+    if (!game.reservation || isReservationActive(game, currentTime)) return [game];
 
-    return {
+    // A first-move board has no community game to preserve. If its creator's
+    // five-minute window expires, discard it instead of storing an empty board.
+    if (game.moves.length === 0 && game.creatorId === game.reservation.playerId) return [];
+
+    return [{
       ...game,
       reservation: null,
       participants: game.participants.map((participant) =>
@@ -53,7 +57,7 @@ function expireReservations(games: Game[]): Game[] {
           : participant,
       ),
       updatedAt: now(),
-    };
+    }];
   });
 }
 
@@ -160,6 +164,7 @@ export const localGameRepository = {
       to: move.to,
       ...(move.promotion ? { promotion: move.promotion } : {}),
       san: move.san,
+      color: move.color === 'w' ? 'white' : 'black',
       fenAfter: chess.fen(),
       createdAt: now(),
     };
@@ -186,5 +191,18 @@ export const localGameRepository = {
 
     writeGames(games.map((item) => item.id === gameId ? nextGame : item));
     return nextGame;
+  },
+
+  abortFirstMoveGame(gameId: string, playerId: PlayerId): void {
+    const games = readGames();
+    const game = games.find((item) => item.id === gameId);
+    const canAbort = game
+      && game.creatorId === playerId
+      && game.moves.length === 0
+      && game.reservation?.playerId === playerId
+      && isReservationActive(game);
+
+    if (!canAbort) return;
+    writeGames(games.filter((item) => item.id !== gameId));
   },
 };

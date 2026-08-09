@@ -11,6 +11,7 @@ export interface MoveRecord {
   to: string;
   promotion?: string;
   san: string;
+  color: 'white' | 'black';
   fenAfter: string;
   createdAt: string;
 }

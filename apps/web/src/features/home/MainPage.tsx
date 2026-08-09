@@ -28,31 +28,29 @@ function getLegalMoves(square: Square): Square[] {
 
 export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }) {
   const [knight, setKnight] = useState<Square>({ column: 3, row: 'c' });
-  const [message, setMessage] = useState('Choose a legal knight move.');
-  const legalMoves = useMemo(() => getLegalMoves(knight), [knight]);
+  const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
+  const legalMoves = useMemo(() => selectedSquare ? getLegalMoves(selectedSquare) : [], [selectedSquare]);
 
   function moveKnight(square: Square) {
-    if (!legalMoves.some((move) => isSameSquare(move, square))) {
-      setMessage('That is not a legal knight move.');
+    if (isSameSquare(knight, square)) {
+      setSelectedSquare((current) => current ? null : knight);
       return;
     }
+
+    if (!selectedSquare || !legalMoves.some((move) => isSameSquare(move, square))) return;
     setKnight(square);
+    setSelectedSquare(null);
     const destination = DESTINATIONS[`${square.column}${square.row}`];
     if (!destination) {
-      setMessage(`Knight moved to ${square.column}${square.row}. Choose another legal move.`);
       return;
     }
     if (destination.action === 'play') onNavigate('/play');
-    else if (destination.action === 'exit') setMessage('This tab can be closed when you are ready.');
-    else setMessage(destination.action === 'how-to-play'
-      ? 'Move the knight onto a destination. A knight moves two squares in one direction and one square perpendicular.'
-      : 'Options will be available here soon.');
   }
 
   return <main className="main-page">
     <header className="site-header"><p className="eyebrow">A community-made game</p><h1>One Move Chess</h1></header>
     <section aria-label="Main menu" className="menu-section">
-      <p aria-live="polite" className="instruction">{message}</p>
+      <p className="instruction">Select the knight, then choose a highlighted square.</p>
       <div className="board-shell">
         <div aria-hidden="true" className="column-labels">{COLUMNS.map((column) => <span key={column}>{column}</span>)}</div>
         <div className="board-and-rows">
@@ -60,8 +58,8 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
           <div className="menu-board" role="grid" aria-label="Knight move menu">
             {ROWS.map((row, rowIndex) => COLUMNS.map((column) => {
               const square = { column, row }; const key = `${column}${row}`; const destination = DESTINATIONS[key];
-              const isKnight = isSameSquare(knight, square); const isLegal = legalMoves.some((move) => isSameSquare(move, square));
-              return <button aria-label={destination ? `${destination.label}, ${key}` : `Square ${key}`} className={`board-square ${((column + rowIndex) % 2 === 0) ? 'board-square--light' : 'board-square--dark'} ${isLegal ? 'board-square--legal' : ''} ${destination ? 'board-square--destination' : ''}`} key={key} onClick={() => moveKnight(square)} role="gridcell" type="button">
+              const isKnight = isSameSquare(knight, square); const isLegal = legalMoves.some((move) => isSameSquare(move, square)); const isSelected = selectedSquare ? isSameSquare(selectedSquare, square) : false;
+              return <button aria-label={destination ? `${destination.label}, ${key}` : `Square ${key}`} className={`board-square ${((column + rowIndex) % 2 === 0) ? 'board-square--light' : 'board-square--dark'} ${isLegal ? 'board-square--legal' : ''} ${isSelected ? 'board-square--selected' : ''} ${destination ? 'board-square--destination' : ''}`} key={key} onClick={() => moveKnight(square)} role="gridcell" type="button">
                 {destination && <span className="destination-label">{destination.label}</span>}
                 {isKnight && <span aria-label="Knight" className="knight">{'\u265E'}</span>}
               </button>;
