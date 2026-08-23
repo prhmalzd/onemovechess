@@ -36,7 +36,9 @@ export interface Game {
   status: GameStatus;
   startingFen: string;
   currentFen: string;
+  currentPly: number;
   moveDistance: number;
+  version: number;
   moves: MoveRecord[];
   participants: GameParticipant[];
   reservation: MoveReservation | null;

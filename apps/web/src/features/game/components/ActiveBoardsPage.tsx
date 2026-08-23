@@ -1,23 +1,25 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Chessboard } from 'react-chessboard';
 import type { Game } from '@/features/game/model/game.types';
-import { localGameRepository } from '@/features/game/services/local-game-repository';
-import { getCurrentPlayerId } from '@/features/game/services/player-identity';
+import { gameApiRepository } from '@/features/game/api/game-api-repository';
+import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
 
 type AppPath = '/' | '/play' | '/active-boards';
 
 export function ActiveBoardsPage({ onNavigate }: { onNavigate: (path: AppPath) => void }) {
-  const playerId = useMemo(getCurrentPlayerId, []);
+  const { session } = useSupabaseAuth();
+  const playerId = session?.user.id;
+  const accessToken = session?.access_token;
   const [games, setGames] = useState<Game[]>([]);
   const [filter, setFilter] = useState<'all' | 'played' | 'not-played'>('all');
 
   useEffect(() => {
-    const refresh = () => setGames(localGameRepository.getActiveBoards(playerId));
+    if (!accessToken) return;
+    const refresh = () => { void gameApiRepository.getActiveBoards(accessToken).then(setGames).catch(() => setGames([])); };
     refresh();
-    window.addEventListener('storage', refresh);
     const refreshTimer = window.setInterval(refresh, 5000);
-    return () => { window.removeEventListener('storage', refresh); window.clearInterval(refreshTimer); };
-  }, [playerId]);
+    return () => window.clearInterval(refreshTimer);
+  }, [accessToken]);
 
   const visibleGames = games.filter((game) => {
     const hasPlayed = game.moves.some((move) => move.playerId === playerId);

@@ -1,6 +1,5 @@
-// Database models will be added alongside the first backend use case.
-// This file is intentionally model-free so the architecture can be scaffolded
-// without prematurely committing to persistence behavior.
+// This Prisma schema maps the existing Supabase tables only. It must never be
+// used to create migrations or modify the manually managed Supabase schema.
 
 generator client {
   provider = "prisma-client-js"
@@ -9,4 +8,83 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+model Player {
+  id              String            @id @db.Uuid
+  displayName     String            @map("display_name")
+  createdAt       DateTime          @default(now()) @map("created_at") @db.Timestamptz(6)
+  createdGames    Game[]            @relation("GameCreator")
+  moves           Move[]
+  participations  GameParticipant[]
+  reservations    GameReservation[]
+
+  @@map("players")
+}
+
+model Game {
+  id             String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  creatorId      String           @map("creator_id") @db.Uuid
+  status         String           @default("active")
+  startingFen    String           @map("starting_fen")
+  currentFen     String           @map("current_fen")
+  currentPly     Int              @default(0) @map("current_ply")
+  moveDistance   Int              @default(10) @map("move_distance")
+  version        Int              @default(1)
+  createdAt      DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt      DateTime         @default(now()) @map("updated_at") @db.Timestamptz(6)
+  completedAt    DateTime?        @map("completed_at") @db.Timestamptz(6)
+  creator        Player           @relation("GameCreator", fields: [creatorId], references: [id])
+  moves          Move[]
+  participants   GameParticipant[]
+  reservation    GameReservation?
+
+  @@index([status, updatedAt], map: "games_status_updated_at_idx")
+  @@map("games")
+}
+
+model Move {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gameId      String   @map("game_id") @db.Uuid
+  playerId    String   @map("player_id") @db.Uuid
+  ply         Int
+  color       String
+  fromSquare  String   @map("from_square")
+  toSquare    String   @map("to_square")
+  promotion   String?
+  san         String
+  fenAfter    String   @map("fen_after")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  game        Game     @relation(fields: [gameId], references: [id])
+  player      Player   @relation(fields: [playerId], references: [id])
+
+  @@unique([gameId, ply], map: "moves_game_ply_unique")
+  @@map("moves")
+}
+
+model GameParticipant {
+  gameId       String    @map("game_id") @db.Uuid
+  playerId     String    @map("player_id") @db.Uuid
+  joinedAt     DateTime  @default(now()) @map("joined_at") @db.Timestamptz(6)
+  lastMovePly  Int?      @map("last_move_ply")
+  status       String    @default("active")
+  timedOutAt   DateTime? @map("timed_out_at") @db.Timestamptz(6)
+  game         Game      @relation(fields: [gameId], references: [id])
+  player       Player    @relation(fields: [playerId], references: [id])
+
+  @@id([gameId, playerId])
+  @@index([playerId], map: "game_participants_player_id_idx")
+  @@map("game_participants")
+}
+
+model GameReservation {
+  gameId      String   @id @map("game_id") @db.Uuid
+  playerId    String   @map("player_id") @db.Uuid
+  reservedAt  DateTime @default(now()) @map("reserved_at") @db.Timestamptz(6)
+  expiresAt   DateTime @map("expires_at") @db.Timestamptz(6)
+  game        Game     @relation(fields: [gameId], references: [id])
+  player      Player   @relation(fields: [playerId], references: [id])
+
+  @@index([expiresAt], map: "game_reservations_expires_at_idx")
+  @@map("game_reservations")
 }

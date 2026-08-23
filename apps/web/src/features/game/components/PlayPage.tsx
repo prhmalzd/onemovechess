@@ -1,9 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { Chessboard, type PieceDropHandlerArgs, type PieceHandlerArgs, type SquareHandlerArgs } from 'react-chessboard';
 import type { Game, PlaySession } from '@/features/game/model/game.types';
-import { localGameRepository } from '@/features/game/services/local-game-repository';
-import { getCurrentPlayerId } from '@/features/game/services/player-identity';
+import { gameApiRepository } from '@/features/game/api/game-api-repository';
+import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
 
 type AppPath = '/' | '/play' | '/active-boards';
 
@@ -16,32 +16,43 @@ function formatRemaining(seconds: number): string {
 }
 
 export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }) {
-  const playerId = useMemo(getCurrentPlayerId, []);
-  const [session, setSession] = useState<PlaySession | null>(null);
+  const { session: authSession, status: authStatus } = useSupabaseAuth();
+  const playerId = authSession?.user.id;
+  const accessToken = authSession?.access_token;
+  const [playSession, setPlaySession] = useState<PlaySession | null>(null);
   const [game, setGame] = useState<Game | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
 
   useEffect(() => {
-    const claimedSession = localGameRepository.claimPlayableGame(playerId);
-    setSession(claimedSession);
-    setGame(claimedSession.game);
-  }, [playerId]);
+    if (!accessToken) return;
+    void gameApiRepository.claimPlayableGame(accessToken)
+      .then((claimedSession) => {
+        setPlaySession(claimedSession);
+        setGame(claimedSession.game);
+      })
+      .catch(() => setGame(null));
+  }, [accessToken]);
 
   useEffect(() => {
-    if (!session) return;
+    if (!playSession) return;
     const updateTimer = () => {
-      const seconds = Math.max(0, Math.ceil((new Date(session.reservation.expiresAt).getTime() - Date.now()) / 1000));
+      const seconds = Math.max(0, Math.ceil((new Date(playSession.reservation.expiresAt).getTime() - Date.now()) / 1000));
       setRemainingSeconds(seconds);
-      if (seconds === 0) setGame(localGameRepository.getGame(session.game.id));
+      if (seconds === 0 && accessToken) {
+        void gameApiRepository.getGame(accessToken, playSession.game.id).then(setGame).catch(() => setGame(null));
+      }
     };
     updateTimer();
     const timer = window.setInterval(updateTimer, 1000);
     return () => window.clearInterval(timer);
-  }, [session]);
+  }, [accessToken, playSession]);
 
-  if (!session || !game) return <main className="page-shell"><p>Preparing your board…</p></main>;
+  if (authStatus === 'loading' || !playerId || !accessToken || !playSession || !game) {
+    return <main className="page-shell"><p>Preparing your board…</p></main>;
+  }
 
+  const authenticatedToken = accessToken;
   const visibleGame = game;
   const canMove = visibleGame.reservation?.playerId === playerId && remainingSeconds > 0 && visibleGame.status === 'active';
   const chess = new Chess(visibleGame.currentFen);
@@ -56,15 +67,20 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
     if (piece?.color === chess.turn()) setSelectedSquare(chessSquare);
   }
 
-  function submitSelectedMove(targetSquare: Square): boolean {
-    if (!selectedSquare || !legalTargets.includes(targetSquare)) return false;
+  async function submitSelectedMove(targetSquare: Square): Promise<void> {
+    if (!selectedSquare || !legalTargets.includes(targetSquare)) return;
     try {
-      const updatedGame = localGameRepository.submitMove(visibleGame.id, playerId, selectedSquare, targetSquare);
+      const updatedGame = await gameApiRepository.submitMove({
+        accessToken: authenticatedToken,
+        gameId: visibleGame.id,
+        from: selectedSquare,
+        to: targetSquare,
+        expectedVersion: visibleGame.version,
+      });
       setGame(updatedGame);
       setSelectedSquare(null);
-      return true;
     } catch {
-      return false;
+      // Invalid/stale moves intentionally leave the board unchanged and quiet.
     }
   }
 
@@ -72,26 +88,26 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
     if (!canMove || !targetSquare) return false;
     const source = sourceSquare as Square;
     const target = targetSquare as Square;
-    setSelectedSquare(source);
     const sourceMoves = chess.moves({ square: source, verbose: true }).map((move) => move.to);
     if (!sourceMoves.includes(target)) return false;
-    try {
-      const updatedGame = localGameRepository.submitMove(visibleGame.id, playerId, source, target);
-      setGame(updatedGame);
-      setSelectedSquare(null);
-      return true;
-    } catch { return false; }
+    setSelectedSquare(source);
+    void submitSelectedMove(target);
+    return false;
   }
 
   function onSquareClick({ square }: SquareHandlerArgs): void {
     if (!canMove) return;
-    if (selectedSquare && submitSelectedMove(square as Square)) return;
+    if (selectedSquare && legalTargets.includes(square as Square)) {
+      void submitSelectedMove(square as Square);
+      return;
+    }
     selectPiece(square);
   }
 
   function abortBoard(): void {
-    localGameRepository.abortFirstMoveGame(visibleGame.id, playerId);
-    onNavigate('/');
+    void gameApiRepository.abortFirstMoveGame(authenticatedToken, visibleGame.id)
+      .then(() => onNavigate('/'))
+      .catch(() => undefined);
   }
 
   const boardOptions = {

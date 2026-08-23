@@ -1,6 +1,7 @@
 import { StrictMode, useEffect, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { registerSW } from 'virtual:pwa-register';
+import { SupabaseAuthProvider } from '@/app/providers/SupabaseAuthProvider';
 import { ActiveBoardsPage } from '@/features/game/components/ActiveBoardsPage';
 import { PlayPage } from '@/features/game/components/PlayPage';
 import { MainPage } from '@/features/home/MainPage';
@@ -35,5 +36,5 @@ function App() {
 }
 
 createRoot(document.getElementById('root')!).render(
-  <StrictMode><App /></StrictMode>,
+  <StrictMode><SupabaseAuthProvider><App /></SupabaseAuthProvider></StrictMode>,
 );

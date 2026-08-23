@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@one-move-chess/contracts": "*",
+    "@supabase/supabase-js": "^2.112.3",
     "@tanstack/react-query": "^5.0.0",
     "chess.js": "^1.0.0",
     "react": "^19.0.0",
