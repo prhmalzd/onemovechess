@@ -7,7 +7,13 @@ import { gamesRoutes } from './modules/games/games.routes.js';
 const app = Fastify({ logger: true });
 
 await app.register(cors, {
-  origin: env.CORS_ORIGIN,
+  origin(origin, callback) {
+    const isConfiguredOrigin = origin === env.CORS_ORIGIN;
+    const isLocalDevelopmentOrigin = env.NODE_ENV === 'development'
+      && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin ?? '');
+
+    callback(null, isConfiguredOrigin || isLocalDevelopmentOrigin);
+  },
   credentials: false,
 });
 

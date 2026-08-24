@@ -4,8 +4,9 @@ import { Chessboard, type PieceDropHandlerArgs, type PieceHandlerArgs, type Squa
 import type { Game, PlaySession } from '@/features/game/model/game.types';
 import { gameApiRepository } from '@/features/game/api/game-api-repository';
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
+import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
 
-type AppPath = '/' | '/play' | '/active-boards';
+type AppPath = '/' | '/play' | '/active-boards' | '/how-to-play' | '/options';
 
 function playerLabel(playerId: string, currentPlayerId: string): string {
   return playerId === currentPlayerId ? 'You' : `Player ${playerId.slice(-4)}`;
@@ -17,12 +18,16 @@ function formatRemaining(seconds: number): string {
 
 export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }) {
   const { session: authSession, status: authStatus } = useSupabaseAuth();
+  const { boardTheme, pieceStyle } = useAppPreferences();
+  const theme = boardThemes[boardTheme];
   const playerId = authSession?.user.id;
   const accessToken = authSession?.access_token;
   const [playSession, setPlaySession] = useState<PlaySession | null>(null);
   const [game, setGame] = useState<Game | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const [isSubmittingMove, setIsSubmittingMove] = useState(false);
+  const [optimisticFen, setOptimisticFen] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -54,7 +59,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
 
   const authenticatedToken = accessToken;
   const visibleGame = game;
-  const canMove = visibleGame.reservation?.playerId === playerId && remainingSeconds > 0 && visibleGame.status === 'active';
+  const canMove = visibleGame.reservation?.playerId === playerId && remainingSeconds > 0 && visibleGame.status === 'active' && !isSubmittingMove;
   const chess = new Chess(visibleGame.currentFen);
   const legalTargets = selectedSquare && canMove
     ? chess.moves({ square: selectedSquare, verbose: true }).map((move) => move.to)
@@ -67,20 +72,28 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
     if (piece?.color === chess.turn()) setSelectedSquare(chessSquare);
   }
 
-  async function submitSelectedMove(targetSquare: Square): Promise<void> {
-    if (!selectedSquare || !legalTargets.includes(targetSquare)) return;
+  async function submitMove(from: Square, to: Square): Promise<void> {
+    const optimisticChess = new Chess(visibleGame.currentFen);
+    const optimisticMove = optimisticChess.move({ from, to, promotion: 'q' });
+    if (!optimisticMove) return;
+
+    setIsSubmittingMove(true);
+    setSelectedSquare(null);
+    setOptimisticFen(optimisticChess.fen());
     try {
       const updatedGame = await gameApiRepository.submitMove({
         accessToken: authenticatedToken,
         gameId: visibleGame.id,
-        from: selectedSquare,
-        to: targetSquare,
+        from,
+        to,
         expectedVersion: visibleGame.version,
       });
       setGame(updatedGame);
-      setSelectedSquare(null);
     } catch {
-      // Invalid/stale moves intentionally leave the board unchanged and quiet.
+      // Invalid/stale moves quietly return to the last confirmed board position.
+    } finally {
+      setOptimisticFen(null);
+      setIsSubmittingMove(false);
     }
   }
 
@@ -90,15 +103,14 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
     const target = targetSquare as Square;
     const sourceMoves = chess.moves({ square: source, verbose: true }).map((move) => move.to);
     if (!sourceMoves.includes(target)) return false;
-    setSelectedSquare(source);
-    void submitSelectedMove(target);
+    void submitMove(source, target);
     return false;
   }
 
   function onSquareClick({ square }: SquareHandlerArgs): void {
     if (!canMove) return;
     if (selectedSquare && legalTargets.includes(square as Square)) {
-      void submitSelectedMove(square as Square);
+      void submitMove(selectedSquare, square as Square);
       return;
     }
     selectPiece(square);
@@ -112,7 +124,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
 
   const boardOptions = {
     id: `game-${visibleGame.id}`,
-    position: visibleGame.currentFen,
+    position: optimisticFen ?? visibleGame.currentFen,
     onPieceDrop,
     onPieceClick: ({ square }: PieceHandlerArgs) => { if (square) selectPiece(square); },
     onSquareClick,
@@ -122,8 +134,8 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       ...Object.fromEntries(legalTargets.map((square) => [square, { backgroundImage: 'radial-gradient(circle, rgba(24, 21, 17, .52) 0 16%, transparent 18%)' }])),
     },
     boardStyle: { borderRadius: '2px' },
-    darkSquareStyle: { backgroundColor: '#806849' },
-    lightSquareStyle: { backgroundColor: '#e6d4ae' },
+    darkSquareStyle: { backgroundColor: theme.dark },
+    lightSquareStyle: { backgroundColor: theme.light },
   };
 
   return <main className="page-shell">
@@ -132,9 +144,10 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       <aside className="move-panel"><h2>Previous moves</h2>{visibleGame.moves.length === 0 ? <p className="muted">You are starting a new board.</p> : <ol className="move-list">{visibleGame.moves.map((move) => <li key={move.id}><span>{move.ply}. {move.san}</span><small>{playerLabel(move.playerId, playerId)}</small></li>)}</ol>}</aside>
       <section className="board-panel">
         <div className="move-status"><strong>{canMove ? `Your move — ${formatRemaining(remainingSeconds)} remaining` : visibleGame.status === 'completed' ? 'This game is complete.' : 'Your move has been used. You can stay and watch this board.'}</strong><p>{canMove ? 'Choose one legal move. Once saved, this board becomes read-only for you.' : 'The board remains live as other players contribute.'}</p></div>
-        <Chessboard options={boardOptions} />
+        <div className={`${!canMove ? 'chessboard--locked ' : ''}${pieceStyle === 'monochrome' ? 'piece-style--monochrome' : ''}`}><Chessboard options={boardOptions} /></div>
         {canMove && visibleGame.moves.length === 0 && visibleGame.creatorId === playerId && <button className="abort-button" onClick={abortBoard} type="button">Abort this empty board</button>}
       </section>
     </section>
+    {isSubmittingMove && <div aria-live="polite" className="move-saving-badge" role="status"><span aria-hidden="true" className="move-saving-spinner" />Saving move…</div>}
   </main>;
 }
