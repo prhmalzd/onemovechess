@@ -65,13 +65,25 @@ async function requirePlayerProfile(database: Database, playerId: string): Promi
   }
 }
 
-async function clearExpiredReservations(database: Database): Promise<void> {
+async function clearExpiredReservations(database: Prisma.TransactionClient): Promise<void> {
   const expiredReservations = await database.gameReservation.findMany({
     where: { expiresAt: { lte: new Date() } },
-    include: { game: true },
+    select: { gameId: true },
+    orderBy: { gameId: 'asc' },
   });
 
-  for (const reservation of expiredReservations) {
+  for (const expiredReservation of expiredReservations) {
+    const lockedGames = await database.$queryRaw<Array<{ id: string }>>`
+      select id from public.games where id = ${expiredReservation.gameId}::uuid for update skip locked
+    `;
+    if (lockedGames.length === 0) continue;
+
+    const reservation = await database.gameReservation.findUnique({
+      where: { gameId: expiredReservation.gameId },
+      include: { game: true },
+    });
+    if (!reservation || reservation.expiresAt > new Date()) continue;
+
     if (reservation.game.currentPly === 0 && reservation.game.creatorId === reservation.playerId) {
       await database.gameReservation.delete({ where: { gameId: reservation.gameId } });
       await database.gameParticipant.deleteMany({ where: { gameId: reservation.gameId } });
@@ -120,6 +132,9 @@ async function lockEligibleGame(database: Prisma.TransactionClient, playerId: st
 export const gamesService = {
   async claimPlayableGame(playerId: string) {
     return prisma.$transaction(async (database) => {
+      // A guest can have multiple browser tabs or retried requests. Serialize claims
+      // per player so one identity can never obtain two active reservations.
+      await database.$queryRaw`select pg_advisory_xact_lock(hashtext(${playerId}))`;
       await requirePlayerProfile(database, playerId);
       await clearExpiredReservations(database);
 
