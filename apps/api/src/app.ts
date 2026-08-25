@@ -10,13 +10,15 @@ type AppOptions = {
 export function buildApp({ routePrefix = '' }: AppOptions = {}) {
   const app = Fastify({ logger: true });
 
-  // The production frontend and API share one Vercel origin, so CORS is only
-  // needed for the separate Vite/Fastify origins used during local development.
-  if (env.NODE_ENV !== 'production' && env.CORS_ORIGIN) {
+  // Same-origin production deployments do not need CORS. Keeping this
+  // configured when an origin is supplied also supports two Vercel projects
+  // during a transition (for example, web and api deployed separately).
+  if (env.CORS_ORIGIN) {
     void app.register(cors, {
       origin(origin, callback) {
         const isConfiguredOrigin = origin === env.CORS_ORIGIN;
-        const isLocalDevelopmentOrigin = /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin ?? '');
+        const isLocalDevelopmentOrigin = env.NODE_ENV !== 'production'
+          && /^http:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin ?? '');
         callback(null, isConfiguredOrigin || isLocalDevelopmentOrigin);
       },
       credentials: false,
