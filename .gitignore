@@ -9,3 +9,6 @@ coverage/
 
 # Prisma
 apps/api/prisma/migrations/
+
+.vercel
+.env*
