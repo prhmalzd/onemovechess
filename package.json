@@ -10,6 +10,7 @@
     "dev": "concurrently --kill-others-on-fail --names api,web --prefix-colors blue,green \"npm run dev:api\" \"npm run dev:web\"",
     "dev:web": "npm run dev --workspace=@one-move-chess/web",
     "dev:api": "npm run dev --workspace=@one-move-chess/api",
+    "vercel-build": "npm run prisma:generate --workspace=@one-move-chess/api && npm run build --workspace=@one-move-chess/web",
     "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces"
   },

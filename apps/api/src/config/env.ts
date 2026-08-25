@@ -10,8 +10,8 @@ const environmentSchema = z.object({
   DATABASE_URL: z.string().min(1),
   SUPABASE_URL: z.string().url(),
   SUPABASE_PUBLISHABLE_KEY: z.string().min(1),
-  CORS_ORIGIN: z.string().url(),
-  SOCKET_CORS_ORIGIN: z.string().url(),
+  CORS_ORIGIN: z.string().url().optional(),
+  SOCKET_CORS_ORIGIN: z.string().url().optional(),
 });
 
 export const env = environmentSchema.parse(process.env);

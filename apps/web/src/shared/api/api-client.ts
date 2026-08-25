@@ -1,4 +1,4 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL;
+const apiBaseUrl = import.meta.env.PROD ? '/api' : import.meta.env.VITE_API_BASE_URL;
 
 if (!apiBaseUrl) {
   throw new Error('Missing VITE_API_BASE_URL in apps/web/.env.local.');
