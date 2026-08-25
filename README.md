@@ -1,89 +1,35 @@
 # One Move Chess
 
-> You only have one move.
+**One Move Chess** is a community chess game. Everyone contributes to the same board, but each player can make only one legal move at a time.
 
-One Move Chess is a social chess experiment: a chess game is built by a community, one legal move at a time. A player joins a board, makes a single move, then watches the game develop as other players contribute.
+Play it here: [onemovechess-web.vercel.app](https://onemovechess-web.vercel.app/)
 
-The project is currently an anonymous MVP. No account or sign-in is needed to try it.
+## How to play
 
-## What works today
+1. On the home screen, select the knight. Legal destinations are shown with small dots.
+2. Move the knight onto **Play** to enter a shared chess board.
+3. Make one legal chess move. You have five minutes after joining the board.
+4. After your move is saved, the board becomes read-only for you while other players continue the game.
+5. When you become eligible again, you can contribute another move to that board.
+6. Open **Active Boards** to follow boards you have joined, inspect the latest position, and replay earlier moves.
 
-- A mobile-friendly home screen controlled with a knight on a 5 by 5 menu board.
-- Anonymous Supabase identities, persisted on the device.
-- Standard chess rules and legal move validation powered by `chess.js`.
-- A full chessboard UI powered by `react-chessboard`.
-- A five-minute reservation for a player's single move.
-- Empty first-move boards can be aborted and are not saved.
-- Shared Supabase-backed games and move history through the Fastify API.
-- Read-only Active Boards with filters, replay, and the player's recorded move.
-- PWA support: the app can be installed on supported mobile browsers when deployed over HTTPS.
+All standard chess rules apply. Illegal moves are prevented automatically.
 
-## Important MVP note
+## Main menu
 
-Games are shared and stored in Supabase. Board updates currently use polling; Socket.IO is reserved for a later real-time upgrade.
+- **Play** — join an available community board or start a new one.
+- **How to Play** — read the quick rules.
+- **Options** — change the board colors and piece style. Preferences are saved on your device.
+- **Active Boards** — view and replay boards you have joined.
 
-## Run locally
+## Anonymous play
 
-### Prerequisites
+You can play without creating an account. The MVP gives your device a temporary guest identity so you can make moves and follow your active boards.
 
-- [Node.js](https://nodejs.org/) 20 or newer
-- npm (installed with Node.js)
+Account features such as permanent profiles, cross-device history, ratings, friends, and achievements may be added later.
 
-### Installation
+## Mobile friendly
 
-```bash
-git clone <your-repository-url>
-cd one-move-chess
-npm install
-```
+One Move Chess is designed for mobile browsers and can be installed as a Progressive Web App on supported devices.
 
-### Start the frontend and API
-
-```bash
-npm run dev
-```
-
-Open the URL printed by Vite, usually [http://localhost:5173](http://localhost:5173). The Fastify API runs at [http://localhost:3000](http://localhost:3000).
-
-On Windows PowerShell, if `npm` is blocked by the execution policy, use `npm.cmd` instead:
-
-```powershell
-npm.cmd install
-npm.cmd run dev
-```
-
-## Verify a production build
-
-```bash
-npm run typecheck
-npm run vercel-build
-```
-
-## Project structure
-
-```text
-apps/
-  web/                 React, TypeScript, Vite, and the installable PWA
-  api/                 Fastify API and PostgreSQL access
-packages/
-  contracts/           Future shared API and Socket.IO contracts
-```
-
-Most current frontend code lives in `apps/web/src/features`:
-
-- `home` - the knight-controlled main menu
-- `game` - board state, API repository, and Active Boards
-
-## Technology
-
-- React + TypeScript + Vite
-- `chess.js` for chess rules
-- `react-chessboard` for the board interface
-- Vite PWA for installability and offline app-shell caching
-- Fastify + Prisma + Supabase PostgreSQL for authoritative multiplayer state
-- Socket.IO planned for real-time updates
-
-## Roadmap
-
-- Socket.IO board updates
-- Optional Google sign-in for permanent identity, cross-device history, profiles, and future social features
+© One Move Chess
