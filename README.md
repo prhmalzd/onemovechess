@@ -32,7 +32,7 @@ All standard chess rules apply. Illegal moves are prevented automatically.
 
 - **Play** — join an available community board or start a new one.
 - **How to Play** — read the quick rules.
-- **Options** — change the board colors and piece style. Preferences are saved on your device.
+- **Profile** — sign in, or open your profile and board preferences.
 - **Active Boards** — view and replay boards you have joined.
 
 ## Anonymous play

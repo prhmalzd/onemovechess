@@ -9,7 +9,7 @@ export function HowToPlayPage({ onNavigate }: { onNavigate: (path: AppPath) => v
         <li><strong>Choose Play.</strong><span>You will join a board that needs a player, or start a fresh one.</span></li>
         <li><strong>Make one legal move.</strong><span>You have five minutes after a board is assigned to you.</span></li>
         <li><strong>Watch the game grow.</strong><span>After your move, the board stays read-only until enough other moves have passed.</span></li>
-        <li><strong>Follow your boards.</strong><span>Use Active boards from the menu to see their latest position.</span></li>
+        <li><strong>Follow your boards.</strong><span>Move the menu knight to Active boards to see their latest position.</span></li>
       </ol>
       <p className="muted">Standard chess rules always apply. A move is only saved when it is legal.</p>
     </section>

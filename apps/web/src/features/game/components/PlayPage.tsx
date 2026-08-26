@@ -7,6 +7,7 @@ import { gameApiRepository } from '@/features/game/api/game-api-repository';
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
 import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
 import { AccountModal } from '@/shared/auth/AccountModal';
+import { getPlayerProfile, profileColors, profilePieces } from '@/shared/auth/player-profile';
 
 type AppPath = '/' | '/play' | '/active-boards' | '/how-to-play' | '/options';
 
@@ -19,11 +20,14 @@ function formatRemaining(seconds: number): string {
 }
 
 export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }) {
-  const { session: authSession, status: authStatus, isAnonymous } = useSupabaseAuth();
+  const { session: authSession, status: authStatus, isAnonymous, user } = useSupabaseAuth();
   const { boardTheme, pieceStyle } = useAppPreferences();
   const theme = boardThemes[boardTheme];
   const playerId = authSession?.user.id;
   const accessToken = authSession?.access_token;
+  const playerProfile = getPlayerProfile(user);
+  const playerProfilePiece = profilePieces.find((piece) => piece.id === playerProfile.piece) ?? profilePieces[1];
+  const playerProfileColor = profileColors.find((color) => color.id === playerProfile.color) ?? profileColors[0];
   const [playSession, setPlaySession] = useState<PlaySession | null>(null);
   const [game, setGame] = useState<Game | null>(null);
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
@@ -170,6 +174,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       <section className="board-panel">
         <div className="move-status"><strong>{canMove ? `Your move — ${formatRemaining(remainingSeconds)} remaining` : visibleGame.status === 'completed' ? 'This game is complete.' : 'Your move has been used. You can stay and watch this board.'}</strong><p>{canMove ? 'Choose one legal move. Once saved, this board becomes read-only for you.' : 'The board remains live as other players contribute.'}</p></div>
         <div className={`${!canMove ? 'chessboard--locked ' : ''}${pieceStyle === 'monochrome' ? 'piece-style--monochrome' : ''}`}><Chessboard options={boardOptions} /></div>
+        <div className="board-player-name board-player-name--play">{isAnonymous ? <i aria-hidden="true" className="board-player-name__guest">♞</i> : <i aria-hidden="true" style={{ backgroundColor: playerProfileColor.value }}>{playerProfilePiece.symbol}</i>}<span>{isAnonymous ? 'Guest' : playerProfile.displayName}</span></div>
         {canMove && visibleGame.moves.length === 0 && visibleGame.creatorId === playerId && <button className="abort-button" onClick={abortBoard} type="button">Abort this empty board</button>}
       </section>
     </section>

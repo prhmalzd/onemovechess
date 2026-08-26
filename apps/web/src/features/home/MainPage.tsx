@@ -8,14 +8,15 @@ import { AccountModal } from '@/shared/auth/AccountModal';
 type Row = 'a' | 'b' | 'c' | 'd' | 'e';
 type Square = { column: number; row: Row };
 type AppPath = '/' | '/play' | '/active-boards' | '/how-to-play' | '/options';
-type Destination = 'play' | 'how-to-play' | 'options' | 'exit';
+type Destination = 'play' | 'how-to-play' | 'profile' | 'active-boards';
 
 const ROWS: Row[] = ['a', 'b', 'c', 'd', 'e'];
 const COLUMNS = [1, 2, 3, 4, 5];
 const DESTINATIONS: Record<string, { label: string; action: Destination }> = {
   '2a': { label: 'Play', action: 'play' },
   '4a': { label: 'How to play', action: 'how-to-play' },
-  '3e': { label: 'Options', action: 'options' },
+  '3e': { label: 'Profile', action: 'profile' },
+  '4e': { label: 'Active boards', action: 'active-boards' },
 };
 
 const isSameSquare = (first: Square, second: Square) => first.column === second.column && first.row === second.row;
@@ -53,7 +54,11 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
     if (!destination) return;
     if (destination.action === 'play') onNavigate('/play');
     if (destination.action === 'how-to-play') onNavigate('/how-to-play');
-    if (destination.action === 'options') onNavigate('/options');
+    if (destination.action === 'profile') {
+      if (isAnonymous || !user) setIsSignInOpen(true);
+      else onNavigate('/options');
+    }
+    if (destination.action === 'active-boards') onNavigate('/active-boards');
   }
 
   function moveKnight(square: Square) {
@@ -82,10 +87,6 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   }
 
   return <main className="main-page">
-    <div className="account-area">
-      {isAnonymous || !user ? <span className="guest-label">Playing as {guest?.displayName ?? 'Guest'}</span> : <span className="signed-in-label"><i aria-hidden="true" style={{ backgroundColor: profileColor.value }}>{profilePiece.symbol}</i>{profile.displayName}</span>}
-      <button className="account-button" onClick={() => isAnonymous || !user ? setIsSignInOpen(true) : onNavigate('/options')} type="button">{isAnonymous || !user ? 'Sign in' : 'Profile'}</button>
-    </div>
     <header className="site-header"><p className="eyebrow">A community-made game</p><h1>One Move Chess</h1></header>
     <section aria-label="Main menu" className="menu-section">
       <p className="instruction">Select or drag the knight, then choose a highlighted square.</p>
@@ -105,7 +106,7 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
           </div>
         </div>
       </div>
-      <button className="secondary-action" onClick={() => onNavigate('/active-boards')} type="button">Active boards</button>
+      <div className="board-player-name">{isAnonymous || !user ? <i aria-hidden="true" className="board-player-name__guest">♞</i> : <i aria-hidden="true" style={{ backgroundColor: profileColor.value }}>{profilePiece.symbol}</i>}<span>{isAnonymous || !user ? guest?.displayName ?? 'Guest' : profile.displayName}</span></div>
     </section>
     {isSignInOpen && (isAnonymous || !user) && <AccountModal allowSignIn onClose={() => setIsSignInOpen(false)} />}
   </main>;

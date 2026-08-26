@@ -115,35 +115,10 @@ h1 {
   position: relative;
 }
 
-.account-area {
-  align-items: center;
-  display: flex;
-  font-family: Inter, Arial, sans-serif;
-  gap: .7rem;
-  justify-content: space-between;
-  left: max(1rem, env(safe-area-inset-left));
-  position: absolute;
-  right: max(1rem, env(safe-area-inset-right));
-  top: max(1rem, env(safe-area-inset-top));
-}
-
-.guest-label { color: #c9c2b4; font-size: .72rem; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.signed-in-label { align-items: center; color: #f7f1e4; display: flex; font-size: .72rem; font-weight: 700; gap: .4rem; max-width: 11rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.signed-in-label i { align-items: center; border-radius: 50%; color: #161512; display: inline-flex; flex: 0 0 auto; font-family: Georgia, 'Times New Roman', serif; font-size: 1rem; font-style: normal; height: 1.35rem; justify-content: center; width: 1.35rem; }
-
-.account-button {
-  background: transparent;
-  border: 1px solid rgba(247, 241, 228, .28);
-  color: #d8d2c4;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .08em;
-  min-height: 2.5rem;
-  padding: .5rem .7rem;
-  text-transform: uppercase;
-}
+.board-player-name { align-items: center; color: #d8d2c4; display: flex; font-family: Inter, Arial, sans-serif; font-size: .78rem; font-weight: 700; gap: .45rem; margin: .65rem 0 0 2rem; min-height: 1.5rem; }
+.board-player-name i { align-items: center; border-radius: 50%; color: #161512; display: inline-flex; font-family: Georgia, 'Times New Roman', serif; font-size: 1rem; font-style: normal; height: 1.35rem; justify-content: center; width: 1.35rem; }
+.board-player-name__guest { background: #c9c2b4; }
+.board-player-name--play { margin-left: 0; }
 
 
 .board-square--light { background: #e6d4ae; color: #24211b; }
