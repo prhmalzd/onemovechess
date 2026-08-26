@@ -13,6 +13,10 @@ The project is a single Next.js application in `apps/web`; `npm run dev` starts 
 
 Set the same variables in Vercel before deploying. Never commit actual credentials; rotate the database password that was previously committed in this repository.
 
+## Google sign-in setup
+
+The app starts players anonymously, then links Google to that same account so existing moves and boards are retained. In Supabase, enable the Google provider and **Manual Identity Linking**, then add your production URL and `http://localhost:3000` to the Auth redirect allow list.
+
 ## How to play
 
 1. On the home screen, select the knight. Legal destinations are shown with small dots.

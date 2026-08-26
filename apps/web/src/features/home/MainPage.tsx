@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getAnonymousPlayer, type AnonymousPlayer } from '@/features/game/services/player-identity';
 import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
+import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
+import { getPlayerProfile, profileColors, profilePieces } from '@/shared/auth/player-profile';
+import { SaveProgressModal } from '@/shared/auth/SaveProgressModal';
 
 type Row = 'a' | 'b' | 'c' | 'd' | 'e';
 type Square = { column: number; row: Row };
@@ -29,8 +32,13 @@ function getLegalMoves(square: Square): Square[] {
 
 export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }) {
   const [guest, setGuest] = useState<AnonymousPlayer | null>(null);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
+  const { user, isAnonymous } = useSupabaseAuth();
   const { boardTheme } = useAppPreferences();
   const theme = boardThemes[boardTheme];
+  const profile = getPlayerProfile(user);
+  const profilePiece = profilePieces.find((piece) => piece.id === profile.piece) ?? profilePieces[1];
+  const profileColor = profileColors.find((color) => color.id === profile.color) ?? profileColors[0];
   const [knight, setKnight] = useState<Square>({ column: 3, row: 'c' });
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const legalMoves = useMemo(() => selectedSquare ? getLegalMoves(selectedSquare) : [], [selectedSquare]);
@@ -57,8 +65,8 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
 
   return <main className="main-page">
     <div className="account-area">
-      <span className="guest-label">Playing as {guest?.displayName ?? 'Guest'}</span>
-      <button aria-label="Sign in or sign up, coming soon" className="account-button" disabled type="button">Sign in</button>
+      {isAnonymous || !user ? <span className="guest-label">Playing as {guest?.displayName ?? 'Guest'}</span> : <span className="signed-in-label"><i aria-hidden="true" style={{ backgroundColor: profileColor.value }}>{profilePiece.symbol}</i>{profile.displayName}</span>}
+      <button className="account-button" onClick={() => isAnonymous || !user ? setIsSignInOpen(true) : onNavigate('/options')} type="button">{isAnonymous || !user ? 'Sign in' : 'Profile'}</button>
     </div>
     <header className="site-header"><p className="eyebrow">A community-made game</p><h1>One Move Chess</h1></header>
     <section aria-label="Main menu" className="menu-section">
@@ -81,5 +89,6 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       </div>
       <button className="secondary-action" onClick={() => onNavigate('/active-boards')} type="button">Active boards</button>
     </section>
+    {isSignInOpen && (isAnonymous || !user) && <SaveProgressModal onClose={() => setIsSignInOpen(false)} />}
   </main>;
 }

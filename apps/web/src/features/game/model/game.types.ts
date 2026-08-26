@@ -7,6 +7,7 @@ export interface MoveRecord {
   id: string;
   ply: number;
   playerId: PlayerId;
+  playerName: string;
   from: string;
   to: string;
   promotion?: string;
@@ -18,6 +19,7 @@ export interface MoveRecord {
 
 export interface GameParticipant {
   playerId: PlayerId;
+  playerName: string;
   status: ParticipantStatus;
   lastMovePly: number | null;
   joinedAt: string;

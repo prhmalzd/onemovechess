@@ -10,8 +10,7 @@ if ((!supabaseUrl || !supabasePublishableKey) && typeof window !== 'undefined') 
 }
 
 /**
- * Browser-safe Supabase client. This intentionally uses only the publishable
- * key; database writes will remain the responsibility of the future Fastify API.
+ * Browser-safe Supabase client. It uses only the publishable key.
  */
 // The placeholder is used only while Next prerenders pages without browser
 // environment variables. The browser branch above still fails fast if config is absent.

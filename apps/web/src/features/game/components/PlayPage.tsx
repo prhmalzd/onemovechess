@@ -6,11 +6,12 @@ import { getCapturedMaterial, pieceSymbols } from '@/features/game/model/capture
 import { gameApiRepository } from '@/features/game/api/game-api-repository';
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
 import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
+import { SaveProgressModal } from '@/shared/auth/SaveProgressModal';
 
 type AppPath = '/' | '/play' | '/active-boards' | '/how-to-play' | '/options';
 
-function playerLabel(playerId: string, currentPlayerId: string): string {
-  return playerId === currentPlayerId ? 'You' : `Player ${playerId.slice(-4)}`;
+function playerLabel(move: Game['moves'][number], currentPlayerId: string): string {
+  return move.playerId === currentPlayerId ? 'You' : move.playerName;
 }
 
 function formatRemaining(seconds: number): string {
@@ -18,7 +19,7 @@ function formatRemaining(seconds: number): string {
 }
 
 export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }) {
-  const { session: authSession, status: authStatus } = useSupabaseAuth();
+  const { session: authSession, status: authStatus, isAnonymous } = useSupabaseAuth();
   const { boardTheme, pieceStyle } = useAppPreferences();
   const theme = boardThemes[boardTheme];
   const playerId = authSession?.user.id;
@@ -30,6 +31,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const [isSubmittingMove, setIsSubmittingMove] = useState(false);
   const [optimisticFen, setOptimisticFen] = useState<string | null>(null);
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
+  const [isSaveProgressOpen, setIsSaveProgressOpen] = useState(false);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -86,6 +88,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
     setSelectedSquare(null);
     setOptimisticFen(optimisticChess.fen());
     try {
+      const isFirstMoveByPlayer = !visibleGame.moves.some((move) => move.playerId === playerId);
       const updatedGame = await gameApiRepository.submitMove({
         accessToken: authenticatedToken,
         gameId: visibleGame.id,
@@ -94,6 +97,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
         expectedVersion: visibleGame.version,
       });
       setGame(updatedGame);
+      if (isAnonymous && isFirstMoveByPlayer) setIsSaveProgressOpen(true);
     } catch {
       // Invalid/stale moves quietly return to the last confirmed board position.
     } finally {
@@ -151,7 +155,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   return <main className="page-shell">
     <header className="page-header"><button className="back-link" onClick={() => onNavigate('/')} type="button">← Menu</button><div><p className="eyebrow">Community board</p><h1>Make one move</h1></div></header>
     <section className="play-layout">
-      <aside className="move-panel"><h2>Previous moves</h2>{visibleGame.moves.length === 0 ? <p className="muted">You are starting a new board.</p> : <ol className="move-list">{visibleGame.moves.map((move) => <li key={move.id}><span>{move.ply}. {move.san}</span><small>{playerLabel(move.playerId, playerId)}</small></li>)}</ol>}<section aria-label="Captured material" className="captured-material"><h2>Captured material</h2><div className="captured-row"><span>White</span><span aria-label={`Captured by White: ${capturedMaterial.capturedByWhite.length} pieces`} className="captured-pieces">{capturedMaterial.capturedByWhite.length ? capturedMaterial.capturedByWhite.map((piece, index) => <i key={`${piece}-${index}`}>{pieceSymbols.black[piece]}</i>) : '—'}</span></div><div className="captured-row"><span>Black</span><span aria-label={`Captured by Black: ${capturedMaterial.capturedByBlack.length} pieces`} className="captured-pieces">{capturedMaterial.capturedByBlack.length ? capturedMaterial.capturedByBlack.map((piece, index) => <i key={`${piece}-${index}`}>{pieceSymbols.white[piece]}</i>) : '—'}</span></div><p className="material-balance">{capturedMaterial.whiteAdvantage === 0 ? 'Material even' : `${capturedMaterial.whiteAdvantage > 0 ? 'White' : 'Black'} +${Math.abs(capturedMaterial.whiteAdvantage)}`}</p></section></aside>
+      <aside className="move-panel"><h2>Previous moves</h2>{visibleGame.moves.length === 0 ? <p className="muted">You are starting a new board.</p> : <ol className="move-list">{visibleGame.moves.map((move) => <li key={move.id}><span>{move.ply}. {move.san}</span><small>{playerLabel(move, playerId)}</small></li>)}</ol>}<section aria-label="Captured material" className="captured-material"><h2>Captured material</h2><div className="captured-row"><span>White</span><span aria-label={`Captured by White: ${capturedMaterial.capturedByWhite.length} pieces`} className="captured-pieces">{capturedMaterial.capturedByWhite.length ? capturedMaterial.capturedByWhite.map((piece, index) => <i key={`${piece}-${index}`}>{pieceSymbols.black[piece]}</i>) : '—'}</span></div><div className="captured-row"><span>Black</span><span aria-label={`Captured by Black: ${capturedMaterial.capturedByBlack.length} pieces`} className="captured-pieces">{capturedMaterial.capturedByBlack.length ? capturedMaterial.capturedByBlack.map((piece, index) => <i key={`${piece}-${index}`}>{pieceSymbols.white[piece]}</i>) : '—'}</span></div><p className="material-balance">{capturedMaterial.whiteAdvantage === 0 ? 'Material even' : `${capturedMaterial.whiteAdvantage > 0 ? 'White' : 'Black'} +${Math.abs(capturedMaterial.whiteAdvantage)}`}</p></section></aside>
       <section className="board-panel">
         <div className="move-status"><strong>{canMove ? `Your move — ${formatRemaining(remainingSeconds)} remaining` : visibleGame.status === 'completed' ? 'This game is complete.' : 'Your move has been used. You can stay and watch this board.'}</strong><p>{canMove ? 'Choose one legal move. Once saved, this board becomes read-only for you.' : 'The board remains live as other players contribute.'}</p></div>
         <div className={`${!canMove ? 'chessboard--locked ' : ''}${pieceStyle === 'monochrome' ? 'piece-style--monochrome' : ''}`}><Chessboard options={boardOptions} /></div>
@@ -159,5 +163,6 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       </section>
     </section>
     {isSubmittingMove && <div aria-live="polite" className="move-saving-badge" role="status"><span aria-hidden="true" className="move-saving-spinner" />Saving move…</div>}
+    {isSaveProgressOpen && isAnonymous && <SaveProgressModal onClose={() => setIsSaveProgressOpen(false)} />}
   </main>;
 }

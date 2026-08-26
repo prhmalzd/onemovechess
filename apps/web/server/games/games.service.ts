@@ -5,8 +5,8 @@ import { prisma } from '../database/prisma';
 const RESERVATION_DURATION_MS = 5 * 60 * 1000;
 
 const gameDetails = {
-  moves: { orderBy: { ply: 'asc' } },
-  participants: true,
+  moves: { orderBy: { ply: 'asc' }, include: { player: { select: { displayName: true } } } },
+  participants: { include: { player: { select: { displayName: true } } } },
   reservation: true,
 } satisfies Prisma.GameInclude;
 
@@ -23,12 +23,12 @@ function serializeGame(game: GameDetails) {
     currentFen: game.currentFen, currentPly: game.currentPly, moveDistance: game.moveDistance,
     version: game.version, createdAt: game.createdAt.toISOString(), updatedAt: game.updatedAt.toISOString(),
     moves: game.moves.map((move) => ({
-      id: move.id, ply: move.ply, playerId: move.playerId, color: move.color, from: move.fromSquare,
+      id: move.id, ply: move.ply, playerId: move.playerId, playerName: move.player.displayName, color: move.color, from: move.fromSquare,
       to: move.toSquare, ...(move.promotion ? { promotion: move.promotion } : {}), san: move.san,
       fenAfter: move.fenAfter, createdAt: move.createdAt.toISOString(),
     })),
     participants: game.participants.map((participant) => ({
-      playerId: participant.playerId, status: participant.status, lastMovePly: participant.lastMovePly,
+      playerId: participant.playerId, playerName: participant.player.displayName, status: participant.status, lastMovePly: participant.lastMovePly,
       joinedAt: participant.joinedAt.toISOString(), timedOutAt: participant.timedOutAt?.toISOString() ?? null,
     })),
     reservation: game.reservation ? {

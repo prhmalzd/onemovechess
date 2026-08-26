@@ -7,3 +7,7 @@ export const moveBody = z.object({
   promotion: z.enum(['q', 'r', 'b', 'n']).optional(),
   expectedVersion: z.number().int().positive(),
 });
+
+export const playerProfileBody = z.object({
+  displayName: z.string().trim().min(1).max(24),
+});

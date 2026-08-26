@@ -8,7 +8,7 @@ describe('getCapturedMaterial', () => {
     const moves = ['e4', 'd5', 'exd5', 'Qxd5'].map((notation, index) => {
       const move = chess.move(notation);
       return {
-        id: String(index), ply: index + 1, playerId: 'player', from: move.from, to: move.to,
+        id: String(index), ply: index + 1, playerId: 'player', playerName: 'Player', from: move.from, to: move.to,
         san: move.san, color: move.color === 'w' ? 'white' as const : 'black' as const,
         fenAfter: chess.fen(), createdAt: new Date().toISOString(),
       };
