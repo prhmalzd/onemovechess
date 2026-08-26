@@ -29,6 +29,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [isSubmittingMove, setIsSubmittingMove] = useState(false);
   const [optimisticFen, setOptimisticFen] = useState<string | null>(null);
+  const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
 
   useEffect(() => {
     if (!accessToken) return;
@@ -36,6 +37,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       .then((claimedSession) => {
         setPlaySession(claimedSession);
         setGame(claimedSession.game);
+        setBoardOrientation(new Chess(claimedSession.game.currentFen).turn() === 'b' ? 'black' : 'white');
       })
       .catch(() => setGame(null));
   }, [accessToken]);
@@ -64,7 +66,6 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const chess = new Chess(visibleGame.currentFen);
   const lastMove = visibleGame.moves.at(-1);
   const capturedMaterial = getCapturedMaterial(visibleGame);
-  const boardOrientation: 'white' | 'black' = chess.turn() === 'b' ? 'black' : 'white';
   const legalTargets = selectedSquare && canMove
     ? chess.moves({ square: selectedSquare, verbose: true }).map((move) => move.to)
     : [];
