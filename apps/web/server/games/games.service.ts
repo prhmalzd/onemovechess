@@ -92,7 +92,7 @@ async function lockEligibleGame(database: Prisma.TransactionClient, playerId: st
 export const gamesService = {
   async claimPlayableGame(playerId: string) {
     return prisma.$transaction(async (database) => {
-      await database.$queryRaw`select pg_advisory_xact_lock(hashtext(${playerId}))`;
+      await database.$executeRaw`select pg_advisory_xact_lock(hashtext(${playerId}))`;
       await requirePlayerProfile(database, playerId);
       await clearExpiredReservations(database);
       const activeReservation = await database.gameReservation.findFirst({
