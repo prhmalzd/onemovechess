@@ -1,9 +1,4 @@
-const configuredApiBaseUrl = import.meta.env.VITE_API_BASE_URL;
-const apiBaseUrl = configuredApiBaseUrl || (import.meta.env.PROD ? '/api' : undefined);
-
-if (!apiBaseUrl) {
-  throw new Error('Missing VITE_API_BASE_URL in apps/web/.env.local.');
-}
+const apiBaseUrl = '/api';
 
 export async function apiRequest<T>(path: string, accessToken: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${apiBaseUrl}${path}`, {

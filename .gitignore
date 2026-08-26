@@ -1,4 +1,6 @@
 node_modules/
+.next/
+.npm-cache/
 dist/
 coverage/
 # Environment files and deployment credentials

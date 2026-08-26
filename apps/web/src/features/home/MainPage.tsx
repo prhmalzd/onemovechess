@@ -1,5 +1,5 @@
-import { useMemo, useState } from 'react';
-import { getAnonymousPlayer } from '@/features/game/services/player-identity';
+import { useEffect, useMemo, useState } from 'react';
+import { getAnonymousPlayer, type AnonymousPlayer } from '@/features/game/services/player-identity';
 import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
 
 type Row = 'a' | 'b' | 'c' | 'd' | 'e';
@@ -28,12 +28,14 @@ function getLegalMoves(square: Square): Square[] {
 }
 
 export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }) {
-  const guest = useMemo(getAnonymousPlayer, []);
+  const [guest, setGuest] = useState<AnonymousPlayer | null>(null);
   const { boardTheme } = useAppPreferences();
   const theme = boardThemes[boardTheme];
   const [knight, setKnight] = useState<Square>({ column: 3, row: 'c' });
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const legalMoves = useMemo(() => selectedSquare ? getLegalMoves(selectedSquare) : [], [selectedSquare]);
+
+  useEffect(() => { setGuest(getAnonymousPlayer()); }, []);
 
   function moveKnight(square: Square) {
     if (isSameSquare(knight, square)) {
@@ -55,7 +57,7 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
 
   return <main className="main-page">
     <div className="account-area">
-      <span className="guest-label">Playing as {guest.displayName}</span>
+      <span className="guest-label">Playing as {guest?.displayName ?? 'Guest'}</span>
       <button aria-label="Sign in or sign up, coming soon" className="account-button" disabled type="button">Sign in</button>
     </div>
     <header className="site-header"><p className="eyebrow">A community-made game</p><h1>One Move Chess</h1></header>

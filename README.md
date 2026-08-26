@@ -4,6 +4,15 @@
 
 Play it here: [onemovechess-web.vercel.app](https://onemovechess-web.vercel.app/)
 
+## Development
+
+The project is a single Next.js application in `apps/web`; `npm run dev` starts both the UI and API Route Handlers on one server.
+
+1. Copy [`apps/web/.env.example`](apps/web/.env.example) to `apps/web/.env.local` and add your Supabase and database values.
+2. Run `npm install`, then `npm run dev`.
+
+Set the same variables in Vercel before deploying. Never commit actual credentials; rotate the database password that was previously committed in this repository.
+
 ## How to play
 
 1. On the home screen, select the knight. Legal destinations are shown with small dots.

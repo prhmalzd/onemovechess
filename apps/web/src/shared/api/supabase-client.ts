@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabasePublishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-if (!supabaseUrl || !supabasePublishableKey) {
+if ((!supabaseUrl || !supabasePublishableKey) && typeof window !== 'undefined') {
   throw new Error(
-    'Missing Supabase configuration. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in the Vercel Production environment (or apps/web/.env.local for local development).',
+    'Missing Supabase configuration. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY in Vercel (or apps/web/.env.local for local development).',
   );
 }
 
@@ -13,4 +13,9 @@ if (!supabaseUrl || !supabasePublishableKey) {
  * Browser-safe Supabase client. This intentionally uses only the publishable
  * key; database writes will remain the responsibility of the future Fastify API.
  */
-export const supabase = createClient(supabaseUrl, supabasePublishableKey);
+// The placeholder is used only while Next prerenders pages without browser
+// environment variables. The browser branch above still fails fast if config is absent.
+export const supabase = createClient(
+  supabaseUrl ?? 'https://missing-project.supabase.co',
+  supabasePublishableKey ?? 'missing-publishable-key',
+);
