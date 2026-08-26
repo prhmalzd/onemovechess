@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
-import { Chessboard, type PieceDropHandlerArgs, type PieceHandlerArgs, type SquareHandlerArgs } from 'react-chessboard';
+import { Chessboard, type PieceDropHandlerArgs, type PieceHandlerArgs, type SquareHandlerArgs, type SquareRenderer } from 'react-chessboard';
 import type { Game, PlaySession } from '@/features/game/model/game.types';
 import { getCapturedMaterial, pieceSymbols } from '@/features/game/model/captured-material';
 import { gameApiRepository } from '@/features/game/api/game-api-repository';
@@ -78,6 +78,10 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const legalTargets = selectedSquare && canMove
     ? chess.moves({ square: selectedSquare, verbose: true }).map((move) => move.to)
     : [];
+  const squareRenderer: SquareRenderer = ({ children, piece, square }) => <div style={{ height: '100%', position: 'relative', width: '100%' }}>
+    {children}
+    {legalTargets.includes(square as Square) && <span aria-hidden="true" className={piece ? 'move-indicator move-indicator--capture' : 'move-indicator'} />}
+  </div>;
 
   function selectPiece(square: string): void {
     if (!canMove) return;
@@ -146,12 +150,12 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
     onPieceClick: ({ square }: PieceHandlerArgs) => { if (square) selectPiece(square); },
     onSquareClick,
     allowDragging: canMove,
+    squareRenderer,
     squareStyles: {
       ...(lastMove ? {
         [lastMove.from]: { backgroundColor: 'rgba(242, 197, 79, .58)' },
         [lastMove.to]: { backgroundColor: 'rgba(242, 197, 79, .72)' },
       } : {}),
-      ...Object.fromEntries(legalTargets.map((square) => [square, { backgroundImage: 'radial-gradient(circle, rgba(24, 21, 17, .52) 0 16%, transparent 18%)' }])),
       ...(selectedSquare ? { [selectedSquare]: { backgroundColor: 'rgba(72, 55, 39, .72)' } } : {}),
     },
     boardStyle: { borderRadius: '2px' },

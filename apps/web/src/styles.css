@@ -191,6 +191,10 @@ h1 {
 }
 .knight:active { cursor: grabbing; }
 
+.move-indicator { align-items: center; display: flex; inset: 0; justify-content: center; pointer-events: none; position: absolute; z-index: 20; }
+.move-indicator::after { background: rgba(24, 21, 17, .52); border-radius: 50%; content: ''; height: 18%; width: 18%; }
+.move-indicator--capture::after { background: rgba(24, 21, 17, .1); border: max(2px, .18vw) solid rgba(24, 21, 17, .72); box-sizing: border-box; height: 78%; width: 78%; }
+
 .secondary-action,
 .back-link {
   background: transparent;
