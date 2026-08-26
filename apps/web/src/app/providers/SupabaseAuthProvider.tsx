@@ -23,6 +23,7 @@ interface SupabaseAuthContextValue {
   isAnonymous: boolean;
   createUsernameAccount: (credentials: { username: string; password: string; captchaSolution: 'b4' }) => Promise<void>;
   signInWithUsername: (credentials: { username: string; password: string }) => Promise<void>;
+  signOut: () => Promise<void>;
   updatePlayerProfile: (profile: PlayerProfile) => Promise<void>;
 }
 
@@ -72,6 +73,14 @@ export function SupabaseAuthProvider({ children }: PropsWithChildren) {
     await signInWithUsername({ username, password });
   }
 
+  async function signOut(): Promise<void> {
+    const { error: signOutError } = await supabase.auth.signOut();
+    if (signOutError) throw signOutError;
+    sessionInitialization = null;
+    const nextSession = await getOrCreateAnonymousSession();
+    sessionInitialization = Promise.resolve(nextSession);
+  }
+
   async function updatePlayerProfile(profile: PlayerProfile): Promise<void> {
     if (!session?.access_token) throw new Error('Your session is no longer available. Please refresh and try again.');
     const response = await fetch('/api/v1/players/me', {
@@ -117,6 +126,7 @@ export function SupabaseAuthProvider({ children }: PropsWithChildren) {
     isAnonymous: session?.user.is_anonymous === true,
     createUsernameAccount,
     signInWithUsername,
+    signOut,
     updatePlayerProfile,
   }), [error, session, status]);
 

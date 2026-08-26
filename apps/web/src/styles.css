@@ -135,6 +135,7 @@ h1 {
   background: transparent;
   border: 1px solid rgba(247, 241, 228, .28);
   color: #d8d2c4;
+  cursor: pointer;
   font-family: inherit;
   font-size: .72rem;
   font-weight: 700;
@@ -318,22 +319,30 @@ h1 {
 .profile-color { border: 3px solid transparent; border-radius: 50%; cursor: pointer; height: 2rem; padding: 0; width: 2rem; }
 .profile-color--selected { border-color: #f7f1e4; box-shadow: 0 0 0 2px #161512, 0 0 0 3px #c8aa6e; }
 .profile-status { color: #c8aa6e; font-family: Inter, Arial, sans-serif; font-size: .8rem; margin: .8rem 0 0; }
-.profile-save { margin: 1.1rem 0 0; }
+.profile-actions { align-items: center; display: flex; flex-wrap: wrap; gap: .8rem; margin-top: 1.1rem; }
+.profile-save { margin: 0; }
+.sign-out-button { background: transparent; border: 1px solid rgba(242, 160, 160, .55); color: #f2a0a0; cursor: pointer; font-family: Inter, Arial, sans-serif; font-size: .75rem; font-weight: 700; min-height: 2.5rem; padding: .55rem .85rem; text-transform: uppercase; }
 
 .modal-backdrop { align-items: center; background: rgba(12, 11, 9, .78); display: flex; inset: 0; justify-content: center; padding: 1rem; position: fixed; z-index: 30; }
 .save-progress-modal { background: #22211d; box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, .48); max-width: 25rem; padding: clamp(1.5rem, 6vw, 2.5rem); width: 100%; }
+.account-modal { max-width: 47rem; }
 .save-progress-modal h2 { font-size: clamp(1.8rem, 7vw, 2.5rem); font-weight: 400; margin: .25rem 0 .8rem; }
 .save-progress-modal > p:not(.eyebrow):not(.auth-error) { color: #c9c2b4; font-family: Inter, Arial, sans-serif; font-size: .9rem; line-height: 1.55; }
+.account-modal-header > p:not(.eyebrow) { color: #c9c2b4; font-family: Inter, Arial, sans-serif; font-size: .9rem; line-height: 1.55; margin: 0; max-width: 44rem; }
+.account-modal-body { display: grid; gap: 2rem; grid-template-columns: minmax(0, 1fr) minmax(13rem, .8fr); margin-top: 1.4rem; }
+.account-modal-body--simple { grid-template-columns: minmax(0, 1fr); }
 .account-mode-tabs { display: grid; gap: .45rem; grid-template-columns: 1fr 1fr; margin: 1.25rem 0 .35rem; }
 .account-mode-tab { background: transparent; border: 1px solid rgba(247, 241, 228, .25); color: #c9c2b4; cursor: pointer; font-family: Inter, Arial, sans-serif; font-size: .72rem; font-weight: 700; min-height: 2.5rem; text-transform: uppercase; }
 .account-mode-tab--active { background: #c8aa6e; border-color: #c8aa6e; color: #161512; }
-.account-field { color: #c9c2b4; display: grid; font-family: Inter, Arial, sans-serif; font-size: .72rem; font-weight: 700; gap: .4rem; letter-spacing: .06em; margin-top: 1rem; text-transform: uppercase; }
+.account-fields { display: grid; gap: .8rem 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.account-field { color: #c9c2b4; display: grid; font-family: Inter, Arial, sans-serif; font-size: .72rem; font-weight: 700; gap: .4rem; letter-spacing: .06em; text-transform: uppercase; }
+.account-field--wide { grid-column: 1 / -1; }
 .account-field input { background: #161512; border: 1px solid rgba(247, 241, 228, .25); box-sizing: border-box; color: #f7f1e4; font: 400 .95rem Inter, Arial, sans-serif; letter-spacing: 0; min-height: 2.75rem; padding: .55rem .65rem; text-transform: none; width: 100%; }
 .password-rules { color: #a89f90; display: grid; font-family: Inter, Arial, sans-serif; font-size: .72rem; gap: .2rem; list-style: none; margin: .7rem 0 0; padding: 0; }
 .password-rules li::before { content: '○'; margin-right: .45rem; }
 .password-rules .password-rule--met { color: #9bc78c; }
 .password-rules .password-rule--met::before { content: '✓'; }
-.chess-captcha { border-top: 1px solid rgba(247, 241, 228, .18); margin-top: 1.2rem; padding-top: 1rem; }
+.chess-captcha { border-left: 1px solid rgba(247, 241, 228, .18); padding-left: 1.5rem; }
 .chess-captcha strong { font-family: Inter, Arial, sans-serif; font-size: .8rem; text-transform: uppercase; }
 .chess-captcha p { color: #c9c2b4; font-family: Inter, Arial, sans-serif; font-size: .78rem; margin: .4rem 0 .75rem; }
 .captcha-board { display: grid; grid-template-columns: repeat(5, 2.2rem); width: max-content; }
@@ -343,9 +352,10 @@ h1 {
 .captcha-square--selected { box-shadow: inset 0 0 0 3px #f7f1e4; }
 .captcha-square--target { box-shadow: inset 0 0 0 3px rgba(25, 78, 50, .7); }
 .captcha-success { color: #9bc78c !important; margin-bottom: 0 !important; }
-.account-submit { background: #f7f1e4; border: 0; color: #161512; cursor: pointer; font-family: Inter, Arial, sans-serif; font-size: .82rem; font-weight: 800; margin-top: 1.5rem; min-height: 3rem; padding: .7rem 1rem; width: 100%; }
+.account-actions { align-items: center; display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; }
+.account-submit { background: #f7f1e4; border: 0; color: #161512; cursor: pointer; font-family: Inter, Arial, sans-serif; font-size: .82rem; font-weight: 800; min-height: 3rem; padding: .7rem 1.5rem; }
 .account-submit:disabled, .dismiss-auth:disabled { cursor: wait; opacity: .7; }
-.dismiss-auth { background: transparent; border: 0; color: #c9c2b4; cursor: pointer; display: block; font-family: Inter, Arial, sans-serif; font-size: .8rem; margin: 1rem auto 0; text-decoration: underline; text-underline-offset: .2rem; }
+.dismiss-auth { background: transparent; border: 0; color: #c9c2b4; cursor: pointer; display: block; font-family: Inter, Arial, sans-serif; font-size: .8rem; text-decoration: underline; text-underline-offset: .2rem; }
 .auth-error { color: #f2a0a0; font-family: Inter, Arial, sans-serif; font-size: .82rem; line-height: 1.45; margin: 1rem 0 0; }
 .review-layout { align-items: start; display: grid; gap: clamp(1.75rem, 5vw, 4rem); grid-template-columns: minmax(0, 34rem) minmax(14rem, 22rem); justify-content: center; margin: auto; max-width: 70rem; }
 .review-moves { border-top: 1px solid rgba(247, 241, 228, .25); padding-top: 1rem; }
@@ -377,4 +387,14 @@ h1 {
   .active-board-card { padding: .85rem; }
   .review-layout { grid-template-columns: 1fr; }
   .review-move-list { max-height: 16rem; }
+  .account-modal-body { gap: 1.25rem; grid-template-columns: 1fr; }
+  .chess-captcha { border-left: 0; border-top: 1px solid rgba(247, 241, 228, .18); padding-left: 0; padding-top: 1.25rem; }
+}
+
+@media (max-width: 480px) {
+  .account-fields { grid-template-columns: 1fr; }
+  .account-field--wide { grid-column: auto; }
+  .account-actions { align-items: stretch; flex-direction: column; gap: .65rem; }
+  .account-submit { width: 100%; }
+  .dismiss-auth { margin: 0 auto; }
 }
