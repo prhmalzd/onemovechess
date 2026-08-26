@@ -156,8 +156,8 @@ h1 {
   color: #15130f;
   font-size: clamp(2rem, 7vw, 3.65rem);
   line-height: 1;
-  pointer-events: none;
   cursor: grab;
+  pointer-events: auto;
   position: absolute;
   text-shadow: 0 2px 0 rgba(255, 255, 255, .22);
   top: 46%;
@@ -165,6 +165,7 @@ h1 {
   z-index: 1;
 }
 .knight:active { cursor: grabbing; }
+.knight--dragging { opacity: .72; }
 
 .move-indicator { align-items: center; display: flex; inset: 0; justify-content: center; pointer-events: none; position: absolute; z-index: 20; }
 .move-indicator::after { background: rgba(24, 21, 17, .52); border-radius: 50%; content: ''; height: 18%; width: 18%; }

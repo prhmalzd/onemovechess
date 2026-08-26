@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 
 export type BoardThemeId = 'classic' | 'ocean' | 'forest' | 'slate';
 export type PieceStyleId = 'classic' | 'monochrome';
@@ -27,6 +27,7 @@ const defaultPreferences: StoredPreferences = { boardTheme: 'classic', pieceStyl
 const AppPreferencesContext = createContext<AppPreferences | null>(null);
 
 function loadPreferences(): StoredPreferences {
+  if (typeof window === 'undefined') return defaultPreferences;
   try {
     const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<StoredPreferences>;
     return {
@@ -39,7 +40,9 @@ function loadPreferences(): StoredPreferences {
 }
 
 export function AppPreferencesProvider({ children }: { children: ReactNode }) {
-  const [preferences, setPreferences] = useState<StoredPreferences>(loadPreferences);
+  const [preferences, setPreferences] = useState<StoredPreferences>(defaultPreferences);
+
+  useEffect(() => { setPreferences(loadPreferences()); }, []);
 
   function update(next: StoredPreferences) {
     setPreferences(next);
