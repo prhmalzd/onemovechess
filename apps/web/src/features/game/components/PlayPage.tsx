@@ -6,7 +6,7 @@ import { getCapturedMaterial, pieceSymbols } from '@/features/game/model/capture
 import { gameApiRepository } from '@/features/game/api/game-api-repository';
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
 import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
-import { SaveProgressModal } from '@/shared/auth/SaveProgressModal';
+import { AccountModal } from '@/shared/auth/AccountModal';
 
 type AppPath = '/' | '/play' | '/active-boards' | '/how-to-play' | '/options';
 
@@ -163,6 +163,6 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       </section>
     </section>
     {isSubmittingMove && <div aria-live="polite" className="move-saving-badge" role="status"><span aria-hidden="true" className="move-saving-spinner" />Saving move…</div>}
-    {isSaveProgressOpen && isAnonymous && <SaveProgressModal onClose={() => setIsSaveProgressOpen(false)} />}
+    {isSaveProgressOpen && isAnonymous && <AccountModal allowSignIn={false} onClose={() => setIsSaveProgressOpen(false)} />}
   </main>;
 }

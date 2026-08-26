@@ -1,8 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type User } from '@supabase/supabase-js';
 import { ApiError } from '../api';
 import { getServerEnv } from '../env';
 
-export async function requirePlayer(request: Request): Promise<string> {
+async function requireAuthenticatedUser(request: Request): Promise<User> {
   const authorization = request.headers.get('authorization');
   const accessToken = authorization?.startsWith('Bearer ') ? authorization.slice(7) : null;
   if (!accessToken) throw new ApiError('A Supabase access token is required.', 401);
@@ -13,5 +13,15 @@ export async function requirePlayer(request: Request): Promise<string> {
   });
   const { data, error } = await supabaseAuth.auth.getUser(accessToken);
   if (error || !data.user) throw new ApiError('Your Supabase session is invalid or has expired.', 401);
-  return data.user.id;
+  return data.user;
+}
+
+export async function requirePlayer(request: Request): Promise<string> {
+  return (await requireAuthenticatedUser(request)).id;
+}
+
+export async function requireAnonymousPlayer(request: Request): Promise<string> {
+  const user = await requireAuthenticatedUser(request);
+  if (!user.is_anonymous) throw new ApiError('This account has already been created.', 409);
+  return user.id;
 }

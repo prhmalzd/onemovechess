@@ -11,6 +11,7 @@ import {
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/shared/api/supabase-client';
 import type { PlayerProfile } from '@/shared/auth/player-profile';
+import { usernameLoginEmail } from '@/shared/auth/username-credentials';
 
 type AuthStatus = 'loading' | 'ready' | 'error';
 
@@ -20,7 +21,8 @@ interface SupabaseAuthContextValue {
   status: AuthStatus;
   error: Error | null;
   isAnonymous: boolean;
-  linkGoogleIdentity: () => Promise<void>;
+  createUsernameAccount: (credentials: { username: string; password: string; captchaSolution: 'b4' }) => Promise<void>;
+  signInWithUsername: (credentials: { username: string; password: string }) => Promise<void>;
   updatePlayerProfile: (profile: PlayerProfile) => Promise<void>;
 }
 
@@ -48,14 +50,26 @@ export function SupabaseAuthProvider({ children }: PropsWithChildren) {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [error, setError] = useState<Error | null>(null);
 
-  async function linkGoogleIdentity(): Promise<void> {
-    const { data, error: identityError } = await supabase.auth.linkIdentity({
-      provider: 'google',
-      options: { redirectTo: window.location.origin },
+  async function signInWithUsername({ username, password }: { username: string; password: string }): Promise<void> {
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: usernameLoginEmail(username),
+      password,
     });
-    if (identityError) throw identityError;
-    if (!data.url) throw new Error('Google sign-in did not return a redirect URL.');
-    window.location.assign(data.url);
+    if (signInError) throw new Error('Username or password is incorrect.');
+  }
+
+  async function createUsernameAccount({ username, password, captchaSolution }: { username: string; password: string; captchaSolution: 'b4' }): Promise<void> {
+    if (!session?.access_token) throw new Error('Your session is no longer available. Please refresh and try again.');
+    const response = await fetch('/api/v1/auth/upgrade', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, captchaSolution }),
+    });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null) as { message?: string } | null;
+      throw new Error(body?.message ?? 'Your account could not be created.');
+    }
+    await signInWithUsername({ username, password });
   }
 
   async function updatePlayerProfile(profile: PlayerProfile): Promise<void> {
@@ -101,7 +115,8 @@ export function SupabaseAuthProvider({ children }: PropsWithChildren) {
     status,
     error,
     isAnonymous: session?.user.is_anonymous === true,
-    linkGoogleIdentity,
+    createUsernameAccount,
+    signInWithUsername,
     updatePlayerProfile,
   }), [error, session, status]);
 

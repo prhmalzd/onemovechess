@@ -13,9 +13,9 @@ The project is a single Next.js application in `apps/web`; `npm run dev` starts 
 
 Set the same variables in Vercel before deploying. Never commit actual credentials; rotate the database password that was previously committed in this repository.
 
-## Google sign-in setup
+## Username/password accounts
 
-The app starts players anonymously, then links Google to that same account so existing moves and boards are retained. In Supabase, enable the Google provider and **Manual Identity Linking**, then add your production URL and `http://localhost:3000` to the Auth redirect allow list.
+The app starts players anonymously. Creating a username/password account upgrades that same player, so existing moves and boards are retained. Enable Supabase's Email provider (no user email is collected or sent), then add the server-only `SUPABASE_SERVICE_ROLE_KEY` to local development and Vercel. Never expose that key through a `NEXT_PUBLIC_*` variable.
 
 ## How to play
 
@@ -39,7 +39,7 @@ All standard chess rules apply. Illegal moves are prevented automatically.
 
 You can play without creating an account. The MVP gives your device a temporary guest identity so you can make moves and follow your active boards.
 
-Account features such as permanent profiles, cross-device history, ratings, friends, and achievements may be added later.
+Create a username/password account after your first move—or from the home screen—to keep your progress across devices. You can then personalize your public name, piece, and color in Options.
 
 ## Mobile friendly
 

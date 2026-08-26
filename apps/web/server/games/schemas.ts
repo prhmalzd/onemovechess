@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { isStrongPassword, normalizeUsername, USERNAME_PATTERN } from '../../src/shared/auth/username-credentials';
 
 export const gameIdParams = z.object({ gameId: z.string().uuid() });
 export const moveBody = z.object({
@@ -10,4 +11,10 @@ export const moveBody = z.object({
 
 export const playerProfileBody = z.object({
   displayName: z.string().trim().min(1).max(24),
+});
+
+export const accountUpgradeBody = z.object({
+  username: z.string().transform(normalizeUsername).pipe(z.string().regex(USERNAME_PATTERN)),
+  password: z.string().refine(isStrongPassword),
+  captchaSolution: z.literal('b4'),
 });

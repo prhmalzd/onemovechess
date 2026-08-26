@@ -3,7 +3,7 @@ import { getAnonymousPlayer, type AnonymousPlayer } from '@/features/game/servic
 import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
 import { getPlayerProfile, profileColors, profilePieces } from '@/shared/auth/player-profile';
-import { SaveProgressModal } from '@/shared/auth/SaveProgressModal';
+import { AccountModal } from '@/shared/auth/AccountModal';
 
 type Row = 'a' | 'b' | 'c' | 'd' | 'e';
 type Square = { column: number; row: Row };
@@ -89,6 +89,6 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       </div>
       <button className="secondary-action" onClick={() => onNavigate('/active-boards')} type="button">Active boards</button>
     </section>
-    {isSignInOpen && (isAnonymous || !user) && <SaveProgressModal onClose={() => setIsSignInOpen(false)} />}
+    {isSignInOpen && (isAnonymous || !user) && <AccountModal allowSignIn onClose={() => setIsSignInOpen(false)} />}
   </main>;
 }

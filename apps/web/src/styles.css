@@ -324,9 +324,27 @@ h1 {
 .save-progress-modal { background: #22211d; box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, .48); max-width: 25rem; padding: clamp(1.5rem, 6vw, 2.5rem); width: 100%; }
 .save-progress-modal h2 { font-size: clamp(1.8rem, 7vw, 2.5rem); font-weight: 400; margin: .25rem 0 .8rem; }
 .save-progress-modal > p:not(.eyebrow):not(.auth-error) { color: #c9c2b4; font-family: Inter, Arial, sans-serif; font-size: .9rem; line-height: 1.55; }
-.google-sign-in { align-items: center; background: #f7f1e4; border: 0; color: #161512; cursor: pointer; display: flex; font-family: Inter, Arial, sans-serif; font-size: .82rem; font-weight: 800; gap: .7rem; justify-content: center; margin-top: 1.5rem; min-height: 3rem; padding: .7rem 1rem; width: 100%; }
-.google-sign-in:disabled, .dismiss-auth:disabled { cursor: wait; opacity: .7; }
-.google-mark { align-items: center; background: #fff; border-radius: 50%; color: #4285f4; display: inline-flex; font-size: 1rem; font-weight: 900; height: 1.45rem; justify-content: center; width: 1.45rem; }
+.account-mode-tabs { display: grid; gap: .45rem; grid-template-columns: 1fr 1fr; margin: 1.25rem 0 .35rem; }
+.account-mode-tab { background: transparent; border: 1px solid rgba(247, 241, 228, .25); color: #c9c2b4; cursor: pointer; font-family: Inter, Arial, sans-serif; font-size: .72rem; font-weight: 700; min-height: 2.5rem; text-transform: uppercase; }
+.account-mode-tab--active { background: #c8aa6e; border-color: #c8aa6e; color: #161512; }
+.account-field { color: #c9c2b4; display: grid; font-family: Inter, Arial, sans-serif; font-size: .72rem; font-weight: 700; gap: .4rem; letter-spacing: .06em; margin-top: 1rem; text-transform: uppercase; }
+.account-field input { background: #161512; border: 1px solid rgba(247, 241, 228, .25); box-sizing: border-box; color: #f7f1e4; font: 400 .95rem Inter, Arial, sans-serif; letter-spacing: 0; min-height: 2.75rem; padding: .55rem .65rem; text-transform: none; width: 100%; }
+.password-rules { color: #a89f90; display: grid; font-family: Inter, Arial, sans-serif; font-size: .72rem; gap: .2rem; list-style: none; margin: .7rem 0 0; padding: 0; }
+.password-rules li::before { content: '○'; margin-right: .45rem; }
+.password-rules .password-rule--met { color: #9bc78c; }
+.password-rules .password-rule--met::before { content: '✓'; }
+.chess-captcha { border-top: 1px solid rgba(247, 241, 228, .18); margin-top: 1.2rem; padding-top: 1rem; }
+.chess-captcha strong { font-family: Inter, Arial, sans-serif; font-size: .8rem; text-transform: uppercase; }
+.chess-captcha p { color: #c9c2b4; font-family: Inter, Arial, sans-serif; font-size: .78rem; margin: .4rem 0 .75rem; }
+.captcha-board { display: grid; grid-template-columns: repeat(5, 2.2rem); width: max-content; }
+.captcha-board button { align-items: center; aspect-ratio: 1; border: 0; color: #161512; cursor: pointer; display: flex; font-family: Georgia, 'Times New Roman', serif; font-size: 1.55rem; justify-content: center; padding: 0; }
+.captcha-square--light { background: #e5d8bd; }
+.captcha-square--dark { background: #a77b55; }
+.captcha-square--selected { box-shadow: inset 0 0 0 3px #f7f1e4; }
+.captcha-square--target { box-shadow: inset 0 0 0 3px rgba(25, 78, 50, .7); }
+.captcha-success { color: #9bc78c !important; margin-bottom: 0 !important; }
+.account-submit { background: #f7f1e4; border: 0; color: #161512; cursor: pointer; font-family: Inter, Arial, sans-serif; font-size: .82rem; font-weight: 800; margin-top: 1.5rem; min-height: 3rem; padding: .7rem 1rem; width: 100%; }
+.account-submit:disabled, .dismiss-auth:disabled { cursor: wait; opacity: .7; }
 .dismiss-auth { background: transparent; border: 0; color: #c9c2b4; cursor: pointer; display: block; font-family: Inter, Arial, sans-serif; font-size: .8rem; margin: 1rem auto 0; text-decoration: underline; text-underline-offset: .2rem; }
 .auth-error { color: #f2a0a0; font-family: Inter, Arial, sans-serif; font-size: .82rem; line-height: 1.45; margin: 1rem 0 0; }
 .review-layout { align-items: start; display: grid; gap: clamp(1.75rem, 5vw, 4rem); grid-template-columns: minmax(0, 34rem) minmax(14rem, 22rem); justify-content: center; margin: auto; max-width: 70rem; }
