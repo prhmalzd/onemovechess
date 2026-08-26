@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { Chessboard, type PieceDropHandlerArgs, type PieceHandlerArgs, type SquareHandlerArgs } from 'react-chessboard';
 import type { Game, PlaySession } from '@/features/game/model/game.types';
+import { getCapturedMaterial, pieceSymbols } from '@/features/game/model/captured-material';
 import { gameApiRepository } from '@/features/game/api/game-api-repository';
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
 import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
@@ -61,6 +62,9 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const visibleGame = game;
   const canMove = visibleGame.reservation?.playerId === playerId && remainingSeconds > 0 && visibleGame.status === 'active' && !isSubmittingMove;
   const chess = new Chess(visibleGame.currentFen);
+  const lastMove = visibleGame.moves.at(-1);
+  const capturedMaterial = getCapturedMaterial(visibleGame);
+  const boardOrientation: 'white' | 'black' = chess.turn() === 'b' ? 'black' : 'white';
   const legalTargets = selectedSquare && canMove
     ? chess.moves({ square: selectedSquare, verbose: true }).map((move) => move.to)
     : [];
@@ -125,13 +129,18 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const boardOptions = {
     id: `game-${visibleGame.id}`,
     position: optimisticFen ?? visibleGame.currentFen,
+    boardOrientation,
     onPieceDrop,
     onPieceClick: ({ square }: PieceHandlerArgs) => { if (square) selectPiece(square); },
     onSquareClick,
     allowDragging: canMove,
     squareStyles: {
-      ...(selectedSquare ? { [selectedSquare]: { backgroundColor: 'rgba(72, 55, 39, .72)' } } : {}),
+      ...(lastMove ? {
+        [lastMove.from]: { backgroundColor: 'rgba(242, 197, 79, .58)' },
+        [lastMove.to]: { backgroundColor: 'rgba(242, 197, 79, .72)' },
+      } : {}),
       ...Object.fromEntries(legalTargets.map((square) => [square, { backgroundImage: 'radial-gradient(circle, rgba(24, 21, 17, .52) 0 16%, transparent 18%)' }])),
+      ...(selectedSquare ? { [selectedSquare]: { backgroundColor: 'rgba(72, 55, 39, .72)' } } : {}),
     },
     boardStyle: { borderRadius: '2px' },
     darkSquareStyle: { backgroundColor: theme.dark },
@@ -141,7 +150,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   return <main className="page-shell">
     <header className="page-header"><button className="back-link" onClick={() => onNavigate('/')} type="button">← Menu</button><div><p className="eyebrow">Community board</p><h1>Make one move</h1></div></header>
     <section className="play-layout">
-      <aside className="move-panel"><h2>Previous moves</h2>{visibleGame.moves.length === 0 ? <p className="muted">You are starting a new board.</p> : <ol className="move-list">{visibleGame.moves.map((move) => <li key={move.id}><span>{move.ply}. {move.san}</span><small>{playerLabel(move.playerId, playerId)}</small></li>)}</ol>}</aside>
+      <aside className="move-panel"><h2>Previous moves</h2>{visibleGame.moves.length === 0 ? <p className="muted">You are starting a new board.</p> : <ol className="move-list">{visibleGame.moves.map((move) => <li key={move.id}><span>{move.ply}. {move.san}</span><small>{playerLabel(move.playerId, playerId)}</small></li>)}</ol>}<section aria-label="Captured material" className="captured-material"><h2>Captured material</h2><div className="captured-row"><span>White</span><span aria-label={`Captured by White: ${capturedMaterial.capturedByWhite.length} pieces`} className="captured-pieces">{capturedMaterial.capturedByWhite.length ? capturedMaterial.capturedByWhite.map((piece, index) => <i key={`${piece}-${index}`}>{pieceSymbols.black[piece]}</i>) : '—'}</span></div><div className="captured-row"><span>Black</span><span aria-label={`Captured by Black: ${capturedMaterial.capturedByBlack.length} pieces`} className="captured-pieces">{capturedMaterial.capturedByBlack.length ? capturedMaterial.capturedByBlack.map((piece, index) => <i key={`${piece}-${index}`}>{pieceSymbols.white[piece]}</i>) : '—'}</span></div><p className="material-balance">{capturedMaterial.whiteAdvantage === 0 ? 'Material even' : `${capturedMaterial.whiteAdvantage > 0 ? 'White' : 'Black'} +${Math.abs(capturedMaterial.whiteAdvantage)}`}</p></section></aside>
       <section className="board-panel">
         <div className="move-status"><strong>{canMove ? `Your move — ${formatRemaining(remainingSeconds)} remaining` : visibleGame.status === 'completed' ? 'This game is complete.' : 'Your move has been used. You can stay and watch this board.'}</strong><p>{canMove ? 'Choose one legal move. Once saved, this board becomes read-only for you.' : 'The board remains live as other players contribute.'}</p></div>
         <div className={`${!canMove ? 'chessboard--locked ' : ''}${pieceStyle === 'monochrome' ? 'piece-style--monochrome' : ''}`}><Chessboard options={boardOptions} /></div>

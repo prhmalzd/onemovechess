@@ -250,6 +250,13 @@ h1 {
 .move-list li { border-bottom: 1px solid rgba(247, 241, 228, .12); display: flex; font-family: Inter, Arial, sans-serif; font-size: .85rem; justify-content: space-between; padding: .65rem 0; }
 .move-list small { color: #c8aa6e; }
 
+.captured-material { border-top: 1px solid rgba(247, 241, 228, .25); margin-top: 1.5rem; padding-top: 1rem; }
+.captured-material h2 { font-family: Georgia, 'Times New Roman', serif; font-size: 1.15rem; font-weight: 400; margin: 0 0 .8rem; }
+.captured-row { align-items: center; color: #c9c2b4; display: flex; font-family: Inter, Arial, sans-serif; font-size: .75rem; justify-content: space-between; padding: .3rem 0; text-transform: uppercase; }
+.captured-pieces { color: #f7f1e4; font-family: Georgia, 'Times New Roman', serif; font-size: 1.35rem; letter-spacing: .08rem; line-height: 1; min-width: 3rem; text-align: right; }
+.captured-pieces i { font-style: normal; }
+.material-balance { color: #c8aa6e; font-family: Inter, Arial, sans-serif; font-size: .78rem; font-weight: 700; letter-spacing: .07em; margin: .8rem 0 0; text-transform: uppercase; }
+
 .move-status { margin-bottom: 1rem; }
 .move-status strong { font-family: Inter, Arial, sans-serif; font-size: .9rem; }
 .move-status p { margin: .35rem 0 0; }
