@@ -2,12 +2,14 @@
 
 import { createContext, useContext, useState, type ReactNode } from 'react';
 
-export type BoardThemeId = 'classic' | 'ocean';
+export type BoardThemeId = 'classic' | 'ocean' | 'forest' | 'slate';
 export type PieceStyleId = 'classic' | 'monochrome';
 
 export const boardThemes: Record<BoardThemeId, { name: string; light: string; dark: string }> = {
   classic: { name: 'Classic', light: '#e6d4ae', dark: '#806849' },
   ocean: { name: 'Ocean', light: '#c8dbe3', dark: '#4e7585' },
+  forest: { name: 'Forest', light: '#d6ddbd', dark: '#58734f' },
+  slate: { name: 'Slate', light: '#d3d6db', dark: '#5b6470' },
 };
 
 type StoredPreferences = {
@@ -28,7 +30,7 @@ function loadPreferences(): StoredPreferences {
   try {
     const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? '{}') as Partial<StoredPreferences>;
     return {
-      boardTheme: saved.boardTheme === 'ocean' ? 'ocean' : 'classic',
+      boardTheme: saved.boardTheme && saved.boardTheme in boardThemes ? saved.boardTheme : 'classic',
       pieceStyle: saved.pieceStyle === 'monochrome' ? 'monochrome' : 'classic',
     };
   } catch {
