@@ -3,12 +3,13 @@ import { ApiError } from '../../server/api';
 import { GameError } from '../../server/games/games.service';
 
 const mocks = vi.hoisted(() => ({
+  requireAuthenticatedUser: vi.fn(),
   requirePlayer: vi.fn(),
   claimPlayableGame: vi.fn(),
   submitMove: vi.fn(),
 }));
 
-vi.mock('../../server/auth/require-player', () => ({ requirePlayer: mocks.requirePlayer }));
+vi.mock('../../server/auth/require-player', () => ({ requireAuthenticatedUser: mocks.requireAuthenticatedUser, requirePlayer: mocks.requirePlayer }));
 vi.mock('../../server/games/games.service', () => ({
   GameError: class GameError extends Error { constructor(message: string, readonly statusCode: number) { super(message); } },
   gamesService: { claimPlayableGame: mocks.claimPlayableGame, submitMove: mocks.submitMove },
@@ -20,6 +21,7 @@ import { POST as submitMove } from '../../app/api/v1/games/[gameId]/moves/route'
 describe('game route handlers', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mocks.requireAuthenticatedUser.mockResolvedValue({ id: 'player-1', is_anonymous: true });
     mocks.requirePlayer.mockResolvedValue('player-1');
   });
 
@@ -28,7 +30,7 @@ describe('game route handlers', () => {
     const response = await claimGame(new Request('http://test/api/v1/games/claim', { method: 'POST' }));
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ id: 'game-1' });
-    expect(mocks.claimPlayableGame).toHaveBeenCalledWith('player-1');
+    expect(mocks.claimPlayableGame).toHaveBeenCalledWith('player-1', { isAnonymous: true });
   });
 
   it('rejects an invalid move body before calling the game service', async () => {

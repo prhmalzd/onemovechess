@@ -6,7 +6,7 @@ type Mode = 'create' | 'sign-in';
 type CaptchaStage = 'start' | 'knight-selected' | 'complete';
 const captchaSquares = ['a5', 'b5', 'c5', 'd5', 'e5', 'a4', 'b4', 'c4', 'd4', 'e4', 'a3', 'b3', 'c3', 'd3', 'e3', 'a2', 'b2', 'c2', 'd2', 'e2', 'a1', 'b1', 'c1', 'd1', 'e1'];
 
-export function AccountModal({ allowSignIn, onClose }: { allowSignIn: boolean; onClose: () => void }) {
+export function AccountModal({ allowSignIn, onClose, reason }: { allowSignIn: boolean; onClose: () => void; reason?: 'board-limit' }) {
   const { createUsernameAccount, signInWithUsername } = useSupabaseAuth();
   const [mode, setMode] = useState<Mode>('create');
   const [username, setUsername] = useState('');
@@ -69,7 +69,7 @@ export function AccountModal({ allowSignIn, onClose }: { allowSignIn: boolean; o
 
   return <div aria-labelledby="account-title" aria-modal="true" className="modal-backdrop" role="dialog">
     <section className="save-progress-modal account-modal">
-      <header className="account-modal-header"><p className="eyebrow">Keep playing</p><h2 id="account-title">{isCreating ? 'Save your progress' : 'Sign in'}</h2><p>{isCreating ? 'Create a username and password to keep this player, its moves, and its boards when you switch devices.' : 'Sign in to continue with your saved player.'}</p></header>
+      <header className="account-modal-header"><p className="eyebrow">Keep playing</p><h2 id="account-title">{isCreating ? reason === 'board-limit' ? 'Create an account to play' : 'Save your progress' : 'Sign in'}</h2><p>{isCreating ? reason === 'board-limit' ? 'Guest players can play one board. Create an account to join another while keeping this player and its saved board.' : 'Create a username and password to keep this player, its moves, and its boards when you switch devices.' : 'Sign in to continue with your saved player.'}</p></header>
       <div className={isCreating ? 'account-modal-body' : 'account-modal-body account-modal-body--simple'}>
         <div>
           {allowSignIn && <div aria-label="Account action" className="account-mode-tabs"><button aria-pressed={isCreating} className={isCreating ? 'account-mode-tab account-mode-tab--active' : 'account-mode-tab'} onClick={() => chooseMode('create')} type="button">Create account</button><button aria-pressed={!isCreating} className={!isCreating ? 'account-mode-tab account-mode-tab--active' : 'account-mode-tab'} onClick={() => chooseMode('sign-in')} type="button">Sign in</button></div>}

@@ -90,7 +90,7 @@ async function lockEligibleGame(database: Prisma.TransactionClient, playerId: st
 }
 
 export const gamesService = {
-  async claimPlayableGame(playerId: string) {
+  async claimPlayableGame(playerId: string, options: { isAnonymous: boolean } = { isAnonymous: false }) {
     return prisma.$transaction(async (database) => {
       await database.$executeRaw`select pg_advisory_xact_lock(hashtext(${playerId}))`;
       await requirePlayerProfile(database, playerId);
@@ -99,6 +99,10 @@ export const gamesService = {
         where: { playerId, expiresAt: { gt: new Date() } }, include: { game: { include: gameDetails } },
       });
       if (activeReservation) return serializeGame(activeReservation.game);
+      if (options.isAnonymous) {
+        const existingBoard = await database.gameParticipant.findFirst({ where: { playerId }, select: { gameId: true } });
+        if (existingBoard) throw new GameError('Create an account to play another board. You can still view your active board.', 403);
+      }
       const candidateId = await lockEligibleGame(database, playerId);
       const expiresAt = new Date(Date.now() + RESERVATION_DURATION_MS);
       if (!candidateId) {

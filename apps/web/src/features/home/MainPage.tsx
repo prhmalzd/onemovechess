@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type DragEvent } from 'react';
 import { getAnonymousPlayer, type AnonymousPlayer } from '@/features/game/services/player-identity';
 import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
@@ -45,22 +45,40 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
 
   useEffect(() => { setGuest(getAnonymousPlayer()); }, []);
 
+  function completeKnightMove(square: Square): void {
+    if (!legalMoves.some((move) => isSameSquare(move, square))) return;
+    setKnight(square);
+    setSelectedSquare(null);
+    const destination = DESTINATIONS[`${square.column}${square.row}`];
+    if (!destination) return;
+    if (destination.action === 'play') onNavigate('/play');
+    if (destination.action === 'how-to-play') onNavigate('/how-to-play');
+    if (destination.action === 'options') onNavigate('/options');
+  }
+
   function moveKnight(square: Square) {
     if (isSameSquare(knight, square)) {
       setSelectedSquare((current) => current ? null : knight);
       return;
     }
 
-    if (!selectedSquare || !legalMoves.some((move) => isSameSquare(move, square))) return;
-    setKnight(square);
-    setSelectedSquare(null);
-    const destination = DESTINATIONS[`${square.column}${square.row}`];
-    if (!destination) {
-      return;
-    }
-    if (destination.action === 'play') onNavigate('/play');
-    if (destination.action === 'how-to-play') onNavigate('/how-to-play');
-    if (destination.action === 'options') onNavigate('/options');
+    if (!selectedSquare) return;
+    completeKnightMove(square);
+  }
+
+  function startKnightDrag(event: DragEvent<HTMLSpanElement>): void {
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', 'knight');
+    setSelectedSquare(knight);
+  }
+
+  function allowKnightDrop(event: DragEvent<HTMLButtonElement>, square: Square): void {
+    if (legalMoves.some((move) => isSameSquare(move, square))) event.preventDefault();
+  }
+
+  function dropKnight(event: DragEvent<HTMLButtonElement>, square: Square): void {
+    event.preventDefault();
+    completeKnightMove(square);
   }
 
   return <main className="main-page">
@@ -70,7 +88,7 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
     </div>
     <header className="site-header"><p className="eyebrow">A community-made game</p><h1>One Move Chess</h1></header>
     <section aria-label="Main menu" className="menu-section">
-      <p className="instruction">Select the knight, then choose a highlighted square.</p>
+      <p className="instruction">Select or drag the knight, then choose a highlighted square.</p>
       <div className="board-shell">
         <div aria-hidden="true" className="column-labels">{COLUMNS.map((column) => <span key={column}>{column}</span>)}</div>
         <div className="board-and-rows">
@@ -79,9 +97,9 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
             {ROWS.map((row, rowIndex) => COLUMNS.map((column) => {
               const square = { column, row }; const key = `${column}${row}`; const destination = DESTINATIONS[key];
               const isKnight = isSameSquare(knight, square); const isLegal = legalMoves.some((move) => isSameSquare(move, square)); const isSelected = selectedSquare ? isSameSquare(selectedSquare, square) : false; const isLight = (column + rowIndex) % 2 === 0;
-              return <button aria-label={destination ? `${destination.label}, ${key}` : `Square ${key}`} className={`board-square ${isLight ? 'board-square--light' : 'board-square--dark'} ${isLegal ? 'board-square--legal' : ''} ${isSelected ? 'board-square--selected' : ''} ${destination ? 'board-square--destination' : ''}`} key={key} onClick={() => moveKnight(square)} role="gridcell" style={{ backgroundColor: isLight ? theme.light : theme.dark }} type="button">
+              return <button aria-label={destination ? `${destination.label}, ${key}` : `Square ${key}`} className={`board-square ${isLight ? 'board-square--light' : 'board-square--dark'} ${isLegal ? 'board-square--legal' : ''} ${isSelected ? 'board-square--selected' : ''} ${destination ? 'board-square--destination' : ''}`} key={key} onClick={() => moveKnight(square)} onDragOver={(event) => allowKnightDrop(event, square)} onDrop={(event) => dropKnight(event, square)} role="gridcell" style={{ backgroundColor: isLight ? theme.light : theme.dark }} type="button">
                 {destination && <span className="destination-label">{destination.label}</span>}
-                {isKnight && <span aria-label="Knight" className="knight">{'\u265E'}</span>}
+                {isKnight && <span aria-label="Knight" className="knight" draggable onDragStart={startKnightDrag}>{'\u265E'}</span>}
               </button>;
             }))}
           </div>

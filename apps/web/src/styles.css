@@ -170,7 +170,11 @@ h1 {
   line-height: 1.2;
   max-width: 100%;
   pointer-events: none;
+  position: absolute;
+  text-align: center;
   text-transform: uppercase;
+  top: 19%;
+  z-index: 2;
 }
 
 .knight {
@@ -178,10 +182,14 @@ h1 {
   font-size: clamp(2rem, 7vw, 3.65rem);
   line-height: 1;
   pointer-events: none;
-  position: relative;
+  cursor: grab;
+  position: absolute;
   text-shadow: 0 2px 0 rgba(255, 255, 255, .22);
+  top: 46%;
+  transform: translateY(-18%);
   z-index: 1;
 }
+.knight:active { cursor: grabbing; }
 
 .secondary-action,
 .back-link {
@@ -324,6 +332,10 @@ h1 {
 .sign-out-button { background: transparent; border: 1px solid rgba(242, 160, 160, .55); color: #f2a0a0; cursor: pointer; font-family: Inter, Arial, sans-serif; font-size: .75rem; font-weight: 700; min-height: 2.5rem; padding: .55rem .85rem; text-transform: uppercase; }
 
 .modal-backdrop { align-items: center; background: rgba(12, 11, 9, .78); display: flex; inset: 0; justify-content: center; padding: 1rem; position: fixed; z-index: 30; }
+.confirm-modal { background: #22211d; box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, .48); max-width: 29rem; padding: clamp(1.5rem, 6vw, 2.5rem); width: 100%; }
+.confirm-modal h2 { font-size: clamp(1.8rem, 7vw, 2.5rem); font-weight: 400; margin: .25rem 0 .8rem; }
+.confirm-modal > p:not(.eyebrow):not(.auth-error) { color: #c9c2b4; font-family: Inter, Arial, sans-serif; font-size: .9rem; line-height: 1.55; }
+.confirm-actions { align-items: center; display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem; }
 .save-progress-modal { background: #22211d; box-shadow: 0 1.5rem 4rem rgba(0, 0, 0, .48); max-width: 25rem; padding: clamp(1.5rem, 6vw, 2.5rem); width: 100%; }
 .account-modal { max-width: 47rem; }
 .save-progress-modal h2 { font-size: clamp(1.8rem, 7vw, 2.5rem); font-weight: 400; margin: .25rem 0 .8rem; }

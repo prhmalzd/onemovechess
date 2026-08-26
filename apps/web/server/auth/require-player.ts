@@ -2,7 +2,7 @@ import { createClient, type User } from '@supabase/supabase-js';
 import { ApiError } from '../api';
 import { getServerEnv } from '../env';
 
-async function requireAuthenticatedUser(request: Request): Promise<User> {
+export async function requireAuthenticatedUser(request: Request): Promise<User> {
   const authorization = request.headers.get('authorization');
   const accessToken = authorization?.startsWith('Bearer ') ? authorization.slice(7) : null;
   if (!accessToken) throw new ApiError('A Supabase access token is required.', 401);

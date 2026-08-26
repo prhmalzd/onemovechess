@@ -32,6 +32,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const [optimisticFen, setOptimisticFen] = useState<string | null>(null);
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
   const [isSaveProgressOpen, setIsSaveProgressOpen] = useState(false);
+  const [isBoardLimitOpen, setIsBoardLimitOpen] = useState(false);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -41,8 +42,14 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
         setGame(claimedSession.game);
         setBoardOrientation(new Chess(claimedSession.game.currentFen).turn() === 'b' ? 'black' : 'white');
       })
-      .catch(() => setGame(null));
-  }, [accessToken]);
+      .catch((error: unknown) => {
+        if (isAnonymous && error instanceof Error && error.message === 'Create an account to play another board. You can still view your active board.') {
+          setIsBoardLimitOpen(true);
+          return;
+        }
+        setGame(null);
+      });
+  }, [accessToken, isAnonymous]);
 
   useEffect(() => {
     if (!playSession) return;
@@ -59,7 +66,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   }, [accessToken, playSession]);
 
   if (authStatus === 'loading' || !playerId || !accessToken || !playSession || !game) {
-    return <main className="page-shell"><p>Preparing your board…</p></main>;
+    return <main className="page-shell"><p>{isBoardLimitOpen ? 'Your guest account already has a board.' : 'Preparing your board…'}</p>{isBoardLimitOpen && <AccountModal allowSignIn={false} onClose={() => onNavigate('/')} reason="board-limit" />}</main>;
   }
 
   const authenticatedToken = accessToken;
