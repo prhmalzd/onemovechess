@@ -305,6 +305,13 @@ h1 {
 .board-panel { margin: auto; max-width: 34rem; width: 100%; }
 
 .active-board-grid { display: grid; gap: 2rem; grid-template-columns: repeat(auto-fit, minmax(15rem, 22rem)); margin: auto; max-width: 75rem; }
+.showcase-grid { display: grid; gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); margin: auto; max-width: 75rem; }
+.showcase-card, .showcase-ui { background: #22211d; display: grid; gap: 1rem; padding: 1rem; }
+.showcase-card h2, .showcase-ui h2 { font-size: 1.4rem; font-weight: 400; margin: 0; }
+.showcase-card p:not(.card-meta) { color: #c9c2b4; font-family: Inter, Arial, sans-serif; font-size: .78rem; line-height: 1.45; margin: .45rem 0 0; }
+.showcase-board { margin: auto; max-width: 15rem; width: 100%; }
+.showcase-ui { gap: 2rem; grid-template-columns: repeat(2, minmax(0, 1fr)); margin: 1.5rem auto 0; max-width: 75rem; }
+.showcase-ui .available-board { cursor: default; }
 .active-board-card { background: #22211d; display: grid; gap: 1rem; padding: 1rem; }
 .active-board-card--clickable { cursor: pointer; }
 .active-board-card--clickable:focus-visible { outline: 3px solid #f8e9c8; outline-offset: 3px; }
@@ -439,6 +446,7 @@ h1 {
   .profile-choice-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .account-modal-body { gap: 1.25rem; grid-template-columns: 1fr; }
   .chess-captcha { border-left: 0; border-top: 1px solid rgba(247, 241, 228, .18); padding-left: 0; padding-top: 1.25rem; }
+  .showcase-ui { grid-template-columns: 1fr; }
 }
 
 @media (max-width: 480px) {
