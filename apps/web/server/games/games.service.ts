@@ -162,7 +162,7 @@ export const gamesService = {
     return prisma.$transaction(async (database) => {
       await requirePlayerProfile(database, playerId);
       await clearExpiredReservations(database);
-      const rows = await database.$queryRaw<Array<{ id: string; current_fen: string; current_ply: number; player_count: number; updated_at: Date }>>`
+      const rows = await database.$queryRaw<Array<{ id: string; current_fen: string; current_ply: number; player_count: bigint | number; updated_at: Date }>>`
         select g.id, g.current_fen, g.current_ply, g.updated_at,
           (select count(*)::int from public.game_participants participants where participants.game_id = g.id) as player_count
         from public.games g left join public.game_participants gp
@@ -174,7 +174,7 @@ export const gamesService = {
         order by g.updated_at desc limit ${pageSize + 1} offset ${offset}
       `;
       const boards = rows.slice(0, pageSize).map((row) => ({
-        id: row.id, currentFen: row.current_fen, currentPly: row.current_ply, playerCount: row.player_count, updatedAt: row.updated_at.toISOString(),
+        id: row.id, currentFen: row.current_fen, currentPly: row.current_ply, playerCount: Number(row.player_count), updatedAt: row.updated_at.toISOString(),
       }));
       return { boards, nextOffset: rows.length > pageSize ? offset + pageSize : null };
     });
