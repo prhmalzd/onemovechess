@@ -94,7 +94,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   }, [accessToken, playSession]);
 
   if (authStatus === 'loading' || !playerId || !accessToken || !playSession || !game) {
-    return <main className="page-shell"><p>{isBoardLimitOpen ? 'Your guest account already has a board.' : 'Preparing your board…'}</p>{isBoardLimitOpen && <AccountModal allowSignIn={false} onClose={() => onNavigate('/')} reason="board-limit" />}</main>;
+    return <main className="page-shell"><p>{isBoardLimitOpen ? 'Your guest account already has a board.' : 'Preparing your board…'}</p>{isBoardLimitOpen && <AccountModal allowSignIn onClose={() => onNavigate('/')} reason="board-limit" />}</main>;
   }
 
   const authenticatedToken = accessToken;
@@ -205,7 +205,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       </section>
     </section>
     {isSubmittingMove && <div aria-live="polite" className="move-saving-badge" role="status"><span aria-hidden="true" className="move-saving-spinner" />Saving move…</div>}
-    {isSaveProgressOpen && isAnonymous && <AccountModal allowSignIn={false} onClose={() => setIsSaveProgressOpen(false)} />}
-    {isBoardLimitOpen && <AccountModal allowSignIn={false} onClose={() => setIsBoardLimitOpen(false)} reason="board-limit" />}
+    {isSaveProgressOpen && isAnonymous && <AccountModal allowSignIn onClose={() => setIsSaveProgressOpen(false)} />}
+    {isBoardLimitOpen && <AccountModal allowSignIn onClose={() => setIsBoardLimitOpen(false)} reason="board-limit" />}
   </main>;
 }

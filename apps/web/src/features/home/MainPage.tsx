@@ -49,6 +49,7 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const [knight, setKnight] = useState<Square>({ column: 3, row: 'c' });
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [isDraggingKnight, setIsDraggingKnight] = useState(false);
+  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const dragState = useRef<{ pointerId: number; startX: number; startY: number; moved: boolean } | null>(null);
   const suppressNextClick = useRef(false);
   const legalMoves = useMemo(() => selectedSquare ? getLegalMoves(selectedSquare) : [], [selectedSquare]);
@@ -96,7 +97,10 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
     if (!currentDrag || currentDrag.pointerId !== event.pointerId) return;
     if (Math.hypot(event.clientX - currentDrag.startX, event.clientY - currentDrag.startY) > 8) {
       currentDrag.moved = true;
+    }
+    if (currentDrag.moved) {
       setIsDraggingKnight(true);
+      setDragPosition({ x: event.clientX, y: event.clientY });
     }
   }
 
@@ -105,11 +109,18 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
     if (!currentDrag || currentDrag.pointerId !== event.pointerId) return;
     dragState.current = null;
     setIsDraggingKnight(false);
+    setDragPosition(null);
     if (!currentDrag.moved) return;
     suppressNextClick.current = true;
     const target = document.elementFromPoint(event.clientX, event.clientY)?.closest<HTMLButtonElement>('[data-menu-square]');
     const targetSquare = target?.dataset.menuSquare ? getSquareFromKey(target.dataset.menuSquare) : null;
     if (targetSquare) completeKnightMove(targetSquare);
+  }
+
+  function cancelKnightDrag(): void {
+    dragState.current = null;
+    setIsDraggingKnight(false);
+    setDragPosition(null);
   }
 
   return <main className="main-page">
@@ -123,15 +134,17 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
           <div className="menu-board" role="grid" aria-label="Knight move menu">
             {ROWS.map((row, rowIndex) => COLUMNS.map((column) => {
               const square = { column, row }; const key = `${column}${row}`; const destination = DESTINATIONS[key];
+              const destinationLabel = destination?.action === 'profile' && (isAnonymous || !user) ? 'Sign in' : destination?.label;
               const isKnight = isSameSquare(knight, square); const isLegal = legalMoves.some((move) => isSameSquare(move, square)); const isSelected = selectedSquare ? isSameSquare(selectedSquare, square) : false; const isLight = (column + rowIndex) % 2 === 0;
-              return <button aria-label={destination ? `${destination.label}, ${key}` : `Square ${key}`} className={`board-square ${isLight ? 'board-square--light' : 'board-square--dark'} ${isLegal ? 'board-square--legal' : ''} ${isSelected ? 'board-square--selected' : ''} ${destination ? 'board-square--destination' : ''}`} data-menu-square={key} key={key} onClick={() => moveKnight(square)} role="gridcell" style={{ backgroundColor: isLight ? theme.light : theme.dark }} type="button">
-                {destination && <span className="destination-label">{destination.label}</span>}
-                {isKnight && <span aria-label="Knight" className={isDraggingKnight ? 'knight knight--dragging' : 'knight'} onPointerCancel={endKnightDrag} onPointerDown={startKnightDrag} onPointerMove={moveKnightDrag} onPointerUp={endKnightDrag}>{'\u265E'}</span>}
+              return <button aria-label={destinationLabel ? `${destinationLabel}, ${key}` : `Square ${key}`} className={`board-square ${isLight ? 'board-square--light' : 'board-square--dark'} ${isLegal ? 'board-square--legal' : ''} ${isSelected ? 'board-square--selected' : ''} ${destination ? 'board-square--destination' : ''}`} data-menu-square={key} key={key} onClick={() => moveKnight(square)} role="gridcell" style={{ backgroundColor: isLight ? theme.light : theme.dark }} type="button">
+                {destinationLabel && <span className="destination-label">{destinationLabel}</span>}
+                {isKnight && <span aria-label="Knight" className={isDraggingKnight ? 'knight knight--dragging' : 'knight'} onPointerCancel={cancelKnightDrag} onPointerDown={startKnightDrag} onPointerMove={moveKnightDrag} onPointerUp={endKnightDrag}>{'\u265E'}</span>}
               </button>;
             }))}
           </div>
         </div>
       </div>
+      {isDraggingKnight && dragPosition && <span aria-hidden="true" className="knight-drag-preview" style={{ left: dragPosition.x, top: dragPosition.y }}>{'\u265E'}</span>}
       <div className="board-player-name">{isAnonymous || !user ? <i aria-hidden="true" className="board-player-name__guest">♞</i> : <i aria-hidden="true" style={{ backgroundColor: profileColor.value }}>{profilePiece.symbol}</i>}<span>{isAnonymous || !user ? guest?.displayName ?? 'Guest' : profile.displayName}</span></div>
     </section>
     {isSignInOpen && (isAnonymous || !user) && <AccountModal allowSignIn onClose={() => setIsSignInOpen(false)} />}
