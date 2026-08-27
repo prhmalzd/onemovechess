@@ -8,6 +8,7 @@ import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
 import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
 import { AccountModal } from '@/shared/auth/AccountModal';
 import { getPlayerProfile, profileColors, profilePieces } from '@/shared/auth/player-profile';
+import { BoardPositionSquare, getBoardPositionState } from '@/features/game/components/board-position-state';
 
 type AppPath = '/' | '/play' | '/active-boards' | '/how-to-play' | '/options';
 
@@ -129,7 +130,8 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const lastMove = visibleGame.moves.at(-1);
   const capturedMaterial = getCapturedMaterial(visibleGame);
   const legalTargets = selectedSquare && canMove ? chess.moves({ square: selectedSquare, verbose: true }).map((move) => move.to) : [];
-  const squareRenderer: SquareRenderer = ({ children, piece, square }) => <div style={{ height: '100%', position: 'relative', width: '100%' }}>{children}{legalTargets.includes(square as Square) && <span aria-hidden="true" className={piece ? 'move-indicator move-indicator--capture' : 'move-indicator'} />}</div>;
+  const positionState = getBoardPositionState(optimisticFen ?? visibleGame.currentFen);
+  const squareRenderer: SquareRenderer = ({ children, piece, square }) => <BoardPositionSquare overlay={legalTargets.includes(square as Square) ? <span aria-hidden="true" className={piece ? 'move-indicator move-indicator--capture' : 'move-indicator'} /> : undefined} square={square} state={positionState}>{children}</BoardPositionSquare>;
 
   function selectPiece(square: string): void {
     if (!canMove) return;

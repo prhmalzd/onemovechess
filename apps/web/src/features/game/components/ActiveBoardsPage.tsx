@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Chessboard } from 'react-chessboard';
+import { Chessboard, type SquareRenderer } from 'react-chessboard';
 import type { Game } from '@/features/game/model/game.types';
 import { gameApiRepository } from '@/features/game/api/game-api-repository';
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
 import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
+import { BoardPositionSquare, getBoardPositionState } from '@/features/game/components/board-position-state';
 
 type AppPath = '/' | '/play' | '/active-boards' | '/how-to-play' | '/options';
 
@@ -13,6 +14,8 @@ function BoardReview({ game, onBack }: { game: Game; onBack: () => void }) {
   const [selectedMoveIndex, setSelectedMoveIndex] = useState(game.moves.length - 1);
   const selectedMove = selectedMoveIndex >= 0 ? game.moves[selectedMoveIndex] : null;
   const position = selectedMove?.fenAfter ?? game.startingFen;
+  const positionState = getBoardPositionState(position);
+  const squareRenderer: SquareRenderer = ({ children, square }) => <BoardPositionSquare square={square} state={positionState}>{children}</BoardPositionSquare>;
 
   return <main className="page-shell">
     <header className="page-header"><button className="back-link" onClick={onBack} type="button">← Boards</button><div><p className="eyebrow">Move replay</p><h1>Board {game.id.slice(-5)}</h1></div></header>
@@ -23,6 +26,7 @@ function BoardReview({ game, onBack }: { game: Game; onBack: () => void }) {
         allowDragging: false,
         darkSquareStyle: { backgroundColor: theme.dark },
         lightSquareStyle: { backgroundColor: theme.light },
+        squareRenderer,
         squareStyles: selectedMove ? {
           [selectedMove.from]: { backgroundColor: 'rgba(34, 29, 20, .5)' },
           [selectedMove.to]: { backgroundColor: 'rgba(34, 29, 20, .5)' },
@@ -80,7 +84,9 @@ export function ActiveBoardsPage({ onNavigate }: { onNavigate: (path: AppPath) =
     {isLoadingBoards ? <p className="empty-state">Loading active boards…</p> : visibleGames.length === 0 ? <p className="empty-state">{games.length === 0 ? 'There are no active boards yet.' : 'No boards match this filter.'}</p> : <section className="active-board-grid">{visibleGames.map((game) => {
       const playerMove = game.moves.find((move) => move.playerId === playerId);
       const moveColor = playerMove?.color ?? (playerMove && playerMove.ply % 2 === 1 ? 'white' : 'black');
-      return <article className="active-board-card active-board-card--clickable" key={game.id} onClick={() => setReviewGame(game)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setReviewGame(game); }} role="button" tabIndex={0}><div><p className="card-meta">{game.status === 'active' ? 'In progress' : 'Complete'} · {game.moves.length} moves</p><h2>Board {game.id.slice(-5)}</h2><p className="player-move">{playerMove ? `Your move: ${playerMove.ply}. ${playerMove.san} (${moveColor})` : 'You did not make a move on this board.'}</p></div><div className={`active-board-preview chessboard--locked ${pieceStyle === 'monochrome' ? 'piece-style--monochrome' : ''}`}><Chessboard options={{ id: `preview-${game.id}`, position: game.currentFen, allowDragging: false, showNotation: false, darkSquareStyle: { backgroundColor: theme.dark }, lightSquareStyle: { backgroundColor: theme.light } }} /></div></article>;
+      const positionState = getBoardPositionState(game.currentFen);
+      const squareRenderer: SquareRenderer = ({ children, square }) => <BoardPositionSquare square={square} state={positionState}>{children}</BoardPositionSquare>;
+      return <article className="active-board-card active-board-card--clickable" key={game.id} onClick={() => setReviewGame(game)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') setReviewGame(game); }} role="button" tabIndex={0}><div><p className="card-meta">{game.status === 'active' ? 'In progress' : 'Complete'} · {game.moves.length} moves</p><h2>Board {game.id.slice(-5)}</h2><p className="player-move">{playerMove ? `Your move: ${playerMove.ply}. ${playerMove.san} (${moveColor})` : 'You did not make a move on this board.'}</p></div><div className={`active-board-preview chessboard--locked ${pieceStyle === 'monochrome' ? 'piece-style--monochrome' : ''}`}><Chessboard options={{ id: `preview-${game.id}`, position: game.currentFen, allowDragging: false, showNotation: false, darkSquareStyle: { backgroundColor: theme.dark }, lightSquareStyle: { backgroundColor: theme.light }, squareRenderer }} /></div></article>;
     })}</section>}
   </main>;
 }
