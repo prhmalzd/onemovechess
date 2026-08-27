@@ -254,7 +254,7 @@ h1 {
 .play-workspace { align-items: start; display: grid; gap: clamp(1.25rem, 3vw, 2.5rem); grid-template-columns: minmax(0, 1fr) minmax(3.1rem, 17rem); margin: auto; max-width: 96rem; }
 .play-workspace--board-only { grid-template-columns: minmax(0, 1fr); max-width: 75rem; }
 .play-workspace .play-layout { margin: 0; max-width: none; }
-.board-panel--chooser { background: #22211d; padding: clamp(1.5rem, 4vw, 2.5rem); }
+.board-panel--chooser { background: #22211d; margin: 0 auto; max-width: 25rem; padding: clamp(1.5rem, 4vw, 2.5rem); width: 100%; }
 .board-panel--chooser h2 { font-size: clamp(1.8rem, 4vw, 2.7rem); font-weight: 400; margin: .3rem 0 .8rem; }
 
 .move-panel {
