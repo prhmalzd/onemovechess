@@ -1,6 +1,7 @@
 import { jsonError, ApiError, readJson } from '../../../../../server/api';
 import { requireAnonymousPlayer } from '../../../../../server/auth/require-player';
 import { createSupabaseAdminClient } from '../../../../../server/auth/supabase-admin';
+import { isValidCaptchaChallenge } from '../../../../../server/auth/captcha';
 import { prisma } from '../../../../../server/database/prisma';
 import { accountUpgradeBody } from '../../../../../server/games/schemas';
 import { usernameLoginEmail } from '../../../../../src/shared/auth/username-credentials';
@@ -18,7 +19,8 @@ function isDuplicateUsernameError(message: string): boolean {
 export async function POST(request: Request): Promise<Response> {
   try {
     const [playerId, body] = await Promise.all([requireAnonymousPlayer(request), readJson(request)]);
-    const { username, password } = accountUpgradeBody.parse(body);
+    const { username, password, captchaToken, captchaSolution } = accountUpgradeBody.parse(body);
+    if (!isValidCaptchaChallenge(captchaToken, captchaSolution)) throw new ApiError('Complete the chess check and try again.', 400);
     const email = usernameLoginEmail(username);
     const { error } = await createSupabaseAdminClient().auth.admin.updateUserById(playerId, {
       email,

@@ -21,7 +21,7 @@ interface SupabaseAuthContextValue {
   status: AuthStatus;
   error: Error | null;
   isAnonymous: boolean;
-  createUsernameAccount: (credentials: { username: string; password: string; captchaSolution: 'b4' }) => Promise<void>;
+  createUsernameAccount: (credentials: { username: string; password: string; captchaToken: string; captchaSolution: string }) => Promise<void>;
   signInWithUsername: (credentials: { username: string; password: string }) => Promise<void>;
   signOut: () => Promise<void>;
   updatePlayerProfile: (profile: PlayerProfile) => Promise<void>;
@@ -59,12 +59,12 @@ export function SupabaseAuthProvider({ children }: PropsWithChildren) {
     if (signInError) throw new Error('Username or password is incorrect.');
   }
 
-  async function createUsernameAccount({ username, password, captchaSolution }: { username: string; password: string; captchaSolution: 'b4' }): Promise<void> {
+  async function createUsernameAccount({ username, password, captchaToken, captchaSolution }: { username: string; password: string; captchaToken: string; captchaSolution: string }): Promise<void> {
     if (!session?.access_token) throw new Error('Your session is no longer available. Please refresh and try again.');
     const response = await fetch('/api/v1/auth/upgrade', {
       method: 'POST',
       headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password, captchaSolution }),
+      body: JSON.stringify({ username, password, captchaToken, captchaSolution }),
     });
     if (!response.ok) {
       const body = await response.json().catch(() => null) as { message?: string } | null;

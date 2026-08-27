@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isStrongPassword, isValidUsername, normalizeUsername, usernameLoginEmail } from '../src/shared/auth/username-credentials';
+import { getPasswordStrength, isValidUsername, normalizeUsername, usernameLoginEmail } from '../src/shared/auth/username-credentials';
 
 describe('username credentials', () => {
   it('normalizes and validates usernames consistently', () => {
@@ -10,10 +10,9 @@ describe('username credentials', () => {
     expect(usernameLoginEmail('Chess_Player')).toBe('chess_player@users.onemovechess.local');
   });
 
-  it('requires a strong password', () => {
-    expect(isStrongPassword('ChessMove!42')).toBe(true);
-    expect(isStrongPassword('chessmove42')).toBe(false);
-    expect(isStrongPassword('ChessMove42')).toBe(false);
-    expect(isStrongPassword('Chess!42')).toBe(false);
+  it('scores password strength without rejecting weaker passwords', () => {
+    expect(getPasswordStrength('x')).toEqual({ score: 1, label: 'Weak' });
+    expect(getPasswordStrength('chessmove42')).toEqual({ score: 3, label: 'Fair' });
+    expect(getPasswordStrength('ChessMove!42')).toEqual({ score: 5, label: 'Strong' });
   });
 });

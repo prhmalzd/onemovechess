@@ -4,6 +4,7 @@ const mocks = vi.hoisted(() => ({
   requireAnonymousPlayer: vi.fn(),
   updateUserById: vi.fn(),
   upsert: vi.fn(),
+  isValidCaptchaChallenge: vi.fn(),
 }));
 
 vi.mock('../../server/auth/require-player', () => ({ requireAnonymousPlayer: mocks.requireAnonymousPlayer }));
@@ -11,6 +12,7 @@ vi.mock('../../server/auth/supabase-admin', () => ({
   createSupabaseAdminClient: () => ({ auth: { admin: { updateUserById: mocks.updateUserById } } }),
 }));
 vi.mock('../../server/database/prisma', () => ({ prisma: { player: { upsert: mocks.upsert } } }));
+vi.mock('../../server/auth/captcha', () => ({ isValidCaptchaChallenge: mocks.isValidCaptchaChallenge }));
 
 import { POST } from '../../app/api/v1/auth/upgrade/route';
 
@@ -20,20 +22,20 @@ describe('account upgrade route', () => {
     mocks.requireAnonymousPlayer.mockResolvedValue('11111111-1111-4111-8111-111111111111');
     mocks.updateUserById.mockResolvedValue({ error: null });
     mocks.upsert.mockResolvedValue({ displayName: 'chess_player' });
+    mocks.isValidCaptchaChallenge.mockReturnValue(true);
   });
 
-  it('rejects a weak password before attempting the account upgrade', async () => {
+  it('accepts a non-empty password regardless of its strength', async () => {
     const response = await POST(new Request('http://test/api/v1/auth/upgrade', {
-      method: 'POST', body: JSON.stringify({ username: 'chess_player', password: 'weak', captchaSolution: 'b4' }),
+      method: 'POST', body: JSON.stringify({ username: 'chess_player', password: 'weak', captchaToken: 'captcha-token', captchaSolution: 'b4' }),
     }));
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({ message: 'The request data is invalid.' });
-    expect(mocks.updateUserById).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(mocks.updateUserById).toHaveBeenCalled();
   });
 
   it('upgrades the anonymous player while preserving their player id', async () => {
     const response = await POST(new Request('http://test/api/v1/auth/upgrade', {
-      method: 'POST', body: JSON.stringify({ username: 'Chess_Player', password: 'ChessMove!42', captchaSolution: 'b4' }),
+      method: 'POST', body: JSON.stringify({ username: 'Chess_Player', password: 'ChessMove!42', captchaToken: 'captcha-token', captchaSolution: 'b4' }),
     }));
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ username: 'chess_player' });
@@ -49,7 +51,7 @@ describe('account upgrade route', () => {
   it('maps a duplicate username to the established error shape', async () => {
     mocks.updateUserById.mockResolvedValue({ error: { message: 'User already registered' } });
     const response = await POST(new Request('http://test/api/v1/auth/upgrade', {
-      method: 'POST', body: JSON.stringify({ username: 'chess_player', password: 'ChessMove!42', captchaSolution: 'b4' }),
+      method: 'POST', body: JSON.stringify({ username: 'chess_player', password: 'ChessMove!42', captchaToken: 'captcha-token', captchaSolution: 'b4' }),
     }));
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({ message: 'That username is already taken.' });

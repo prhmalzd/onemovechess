@@ -337,10 +337,13 @@ h1 {
 .account-field { color: #c9c2b4; display: grid; font-family: Inter, Arial, sans-serif; font-size: .72rem; font-weight: 700; gap: .4rem; letter-spacing: .06em; text-transform: uppercase; }
 .account-field--wide { grid-column: 1 / -1; }
 .account-field input { background: #161512; border: 1px solid rgba(247, 241, 228, .25); box-sizing: border-box; color: #f7f1e4; font: 400 .95rem Inter, Arial, sans-serif; letter-spacing: 0; min-height: 2.75rem; padding: .55rem .65rem; text-transform: none; width: 100%; }
-.password-rules { color: #a89f90; display: grid; font-family: Inter, Arial, sans-serif; font-size: .72rem; gap: .2rem; list-style: none; margin: .7rem 0 0; padding: 0; }
-.password-rules li::before { content: '○'; margin-right: .45rem; }
-.password-rules .password-rule--met { color: #9bc78c; }
-.password-rules .password-rule--met::before { content: '✓'; }
+.password-strength { color: #a89f90; font-family: Inter, Arial, sans-serif; font-size: .72rem; margin-top: .7rem; }
+.password-strength__bar { display: grid; gap: .3rem; grid-template-columns: repeat(5, 1fr); margin-bottom: .4rem; }
+.password-strength__segment { background: rgba(247, 241, 228, .16); height: .3rem; }
+.password-strength--weak .password-strength__segment--filled { background: #d87568; }
+.password-strength--fair .password-strength__segment--filled { background: #d8aa62; }
+.password-strength--good .password-strength__segment--filled { background: #b9c66a; }
+.password-strength--strong .password-strength__segment--filled { background: #9bc78c; }
 .chess-captcha { border-left: 1px solid rgba(247, 241, 228, .18); padding-left: 1.5rem; }
 .chess-captcha strong { font-family: Inter, Arial, sans-serif; font-size: .8rem; text-transform: uppercase; }
 .chess-captcha p { color: #c9c2b4; font-family: Inter, Arial, sans-serif; font-size: .78rem; margin: .4rem 0 .75rem; }
