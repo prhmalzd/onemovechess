@@ -229,6 +229,7 @@ h1 {
   max-width: 75rem;
 }
 .play-workspace { align-items: start; display: grid; gap: clamp(1.25rem, 3vw, 2.5rem); grid-template-columns: minmax(0, 1fr) minmax(3.1rem, 17rem); margin: auto; max-width: 96rem; }
+.play-workspace--board-only { grid-template-columns: minmax(0, 1fr); max-width: 75rem; }
 .play-workspace .play-layout { margin: 0; max-width: none; }
 .board-panel--chooser { background: #22211d; padding: clamp(1.5rem, 4vw, 2.5rem); }
 .board-panel--chooser h2 { font-size: clamp(1.8rem, 4vw, 2.7rem); font-weight: 400; margin: .3rem 0 .8rem; }
@@ -259,6 +260,8 @@ h1 {
 .available-boards-sidebar__empty { padding: .3rem 0; }
 .create-board-button { background: #c8aa6e; border: 0; color: #161512; cursor: pointer; font-family: Inter, Arial, sans-serif; font-size: .68rem; font-weight: 800; min-height: 2.5rem; padding: .55rem .7rem; text-transform: uppercase; width: 100%; }
 .create-board-button:disabled { cursor: wait; opacity: .7; }
+.random-board-button { background: transparent; border: 1px solid #c8aa6e; color: #c8aa6e; cursor: pointer; font-family: Inter, Arial, sans-serif; font-size: .65rem; font-weight: 800; min-height: 2.45rem; padding: .5rem; text-transform: uppercase; width: 100%; }
+.random-board-button:disabled { cursor: wait; opacity: .6; }
 .available-boards__heading { align-items: start; display: flex; gap: .75rem; justify-content: space-between; }
 .available-boards h2 { font-family: Georgia, 'Times New Roman', serif; font-size: 1.15rem; font-weight: 400; margin: 0; }
 .available-boards__heading p { color: #c9c2b4; font-size: .72rem; line-height: 1.4; margin: .3rem 0 0; }

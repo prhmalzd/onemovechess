@@ -169,6 +169,7 @@ export const gamesService = {
           on gp.game_id = g.id and gp.player_id = ${playerId}::uuid
         where g.status = 'active' and (gp.player_id is null or (gp.status <> 'timed_out'
           and (gp.last_move_ply is null or g.current_ply - gp.last_move_ply >= g.move_distance)))
+          and exists (select 1 from public.moves moves where moves.game_id = g.id and moves.player_id <> ${playerId}::uuid)
           and not exists (select 1 from public.game_reservations gr where gr.game_id = g.id and gr.expires_at > now())
         order by g.updated_at desc limit ${pageSize + 1} offset ${offset}
       `;
