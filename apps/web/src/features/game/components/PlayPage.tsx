@@ -33,6 +33,8 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
   const [isSubmittingMove, setIsSubmittingMove] = useState(false);
+  const [isClaimingNextBoard, setIsClaimingNextBoard] = useState(false);
+  const [hasSubmittedMove, setHasSubmittedMove] = useState(false);
   const [optimisticFen, setOptimisticFen] = useState<string | null>(null);
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
   const [isSaveProgressOpen, setIsSaveProgressOpen] = useState(false);
@@ -54,6 +56,28 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
         setGame(null);
       });
   }, [accessToken, isAnonymous]);
+
+  async function claimNextBoard(): Promise<void> {
+    if (!accessToken || isClaimingNextBoard) return;
+
+    setIsClaimingNextBoard(true);
+    try {
+      const claimedSession = await gameApiRepository.claimPlayableGame(accessToken);
+      setPlaySession(claimedSession);
+      setGame(claimedSession.game);
+      setBoardOrientation(new Chess(claimedSession.game.currentFen).turn() === 'b' ? 'black' : 'white');
+      setRemainingSeconds(Math.max(0, Math.ceil((new Date(claimedSession.reservation.expiresAt).getTime() - Date.now()) / 1000)));
+      setSelectedSquare(null);
+      setOptimisticFen(null);
+      setHasSubmittedMove(false);
+    } catch (error: unknown) {
+      if (isAnonymous && error instanceof Error && error.message === 'Create an account to play another board. You can still view your active board.') {
+        setIsBoardLimitOpen(true);
+      }
+    } finally {
+      setIsClaimingNextBoard(false);
+    }
+  }
 
   useEffect(() => {
     if (!playSession) return;
@@ -112,6 +136,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
         expectedVersion: visibleGame.version,
       });
       setGame(updatedGame);
+      setHasSubmittedMove(true);
       if (isAnonymous && isFirstMoveByPlayer) setIsSaveProgressOpen(true);
     } catch {
       // Invalid/stale moves quietly return to the last confirmed board position.
@@ -176,9 +201,11 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
         <div className={`${!canMove ? 'chessboard--locked ' : ''}${pieceStyle === 'monochrome' ? 'piece-style--monochrome' : ''}`}><Chessboard options={boardOptions} /></div>
         <div className="board-player-name board-player-name--play">{isAnonymous ? <i aria-hidden="true" className="board-player-name__guest">♞</i> : <i aria-hidden="true" style={{ backgroundColor: playerProfileColor.value }}>{playerProfilePiece.symbol}</i>}<span>{isAnonymous ? 'Guest' : playerProfile.displayName}</span></div>
         {canMove && visibleGame.moves.length === 0 && visibleGame.creatorId === playerId && <button className="abort-button" onClick={abortBoard} type="button">Abort this empty board</button>}
+        {hasSubmittedMove && <button className="next-board-button" disabled={isClaimingNextBoard} onClick={() => { void claimNextBoard(); }} type="button">{isClaimingNextBoard ? 'Finding next board…' : 'Next board →'}</button>}
       </section>
     </section>
     {isSubmittingMove && <div aria-live="polite" className="move-saving-badge" role="status"><span aria-hidden="true" className="move-saving-spinner" />Saving move…</div>}
     {isSaveProgressOpen && isAnonymous && <AccountModal allowSignIn={false} onClose={() => setIsSaveProgressOpen(false)} />}
+    {isBoardLimitOpen && <AccountModal allowSignIn={false} onClose={() => setIsBoardLimitOpen(false)} reason="board-limit" />}
   </main>;
 }

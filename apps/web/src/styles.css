@@ -251,6 +251,8 @@ h1 {
 .move-status strong { font-family: Inter, Arial, sans-serif; font-size: .9rem; }
 .move-status p { margin: .35rem 0 0; }
 .abort-button { background: transparent; border: 0; color: #c9c2b4; cursor: pointer; display: block; font-family: Inter, Arial, sans-serif; font-size: .78rem; margin: 1rem auto 0; text-decoration: underline; text-underline-offset: .25rem; }
+.next-board-button { background: #c8aa6e; border: 0; color: #161512; cursor: pointer; display: block; font-family: Inter, Arial, sans-serif; font-size: .8rem; font-weight: 800; letter-spacing: .06em; margin: 1rem auto 0; min-height: 2.8rem; padding: .7rem 1.1rem; text-transform: uppercase; }
+.next-board-button:disabled { cursor: wait; opacity: .7; }
 .move-saving-badge { align-items: center; background: #f7f1e4; bottom: max(1rem, env(safe-area-inset-bottom)); box-shadow: 0 8px 24px rgba(0, 0, 0, .3); color: #161512; display: flex; font-family: Inter, Arial, sans-serif; font-size: .8rem; font-weight: 800; gap: .55rem; letter-spacing: .03em; padding: .72rem .9rem; position: fixed; right: max(1rem, env(safe-area-inset-right)); z-index: 10; }
 .move-saving-spinner { animation: move-saving-spin .75s linear infinite; border: 2px solid rgba(22, 21, 18, .25); border-radius: 50%; border-top-color: #161512; height: .85rem; width: .85rem; }
 @keyframes move-saving-spin { to { transform: rotate(360deg); } }
