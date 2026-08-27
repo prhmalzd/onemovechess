@@ -1,8 +1,8 @@
-# One Move Chess architecture
+# Collective UnconsChess architecture
 
 ## Single application
 
-One Move Chess is a single Next.js App Router application located in `apps/web` and deployed as one Vercel project. `npm run dev` starts one Next server, serving both pages and API Route Handlers.
+Collective UnconsChess is a single Next.js App Router application located in `apps/web` and deployed as one Vercel project. `npm run dev` starts one Next server, serving both pages and API Route Handlers.
 
 ```text
 Browser

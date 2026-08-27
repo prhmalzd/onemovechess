@@ -4,9 +4,9 @@ import { AppProviders } from './components/AppProviders';
 import { PwaRegistration } from './components/PwaRegistration';
 
 export const metadata: Metadata = {
-  title: 'One Move Chess',
+  title: 'Collective UnconsChess',
   description: 'A community-made chess game, one move at a time.',
-  applicationName: 'One Move Chess',
+  applicationName: 'Collective UnconsChess',
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

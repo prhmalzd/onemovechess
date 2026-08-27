@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'One Move Chess',
-    short_name: 'One Move',
+    name: 'Collective UnconsChess',
+    short_name: 'UnconsChess',
     description: 'A community-made chess game, one move at a time.',
     start_url: '/',
     display: 'standalone',

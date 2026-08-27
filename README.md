@@ -1,6 +1,6 @@
-# One Move Chess
+# Collective UnconsChess
 
-**One Move Chess** is a community chess game. Everyone contributes to the same board, but each player can make only one legal move at a time.
+**Collective UnconsChess** is a community chess game. Everyone contributes to the same board, but each player can make only one legal move at a time.
 
 Play it here: [onemovechess-web.vercel.app](https://onemovechess-web.vercel.app/)
 
@@ -43,6 +43,6 @@ Create a username/password account after your first move—or from the home scre
 
 ## Mobile friendly
 
-One Move Chess is designed for mobile browsers and can be installed as a Progressive Web App on supported devices.
+Collective UnconsChess is designed for mobile browsers and can be installed as a Progressive Web App on supported devices.
 
-© One Move Chess
+© Collective UnconsChess

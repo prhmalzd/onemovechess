@@ -124,7 +124,7 @@ export function MainPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   }
 
   return <main className="main-page">
-    <header className="site-header"><p className="eyebrow">A community-made game</p><h1>One Move Chess</h1></header>
+    <header className="site-header"><p className="eyebrow">A community-made game</p><h1>Collective UnconsChess</h1></header>
     <section aria-label="Main menu" className="menu-section">
       <p className="instruction">Select or drag the knight, then choose a highlighted square.</p>
       <div className="board-shell">
