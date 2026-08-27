@@ -20,8 +20,9 @@ function formatRemaining(seconds: number): string {
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
 }
 
-function AvailableBoardsSidebar({ boards, offset, nextOffset, isClaimingBoardId, isCreatingBoard, isLoading, isOpen, onClaim, onCreate, onRandom, onOffsetChange, onToggle }: { boards: AvailableBoard[]; offset: number; nextOffset: number | null; isClaimingBoardId: string | null; isCreatingBoard: boolean; isLoading: boolean; isOpen: boolean; onClaim: (gameId: string) => void; onCreate: () => void; onRandom: () => void; onOffsetChange: (offset: number) => void; onToggle: () => void }) {
-  return <aside aria-label="Available boards" className={isOpen ? 'available-boards-sidebar' : 'available-boards-sidebar available-boards-sidebar--collapsed'}>
+function AvailableBoardsSidebar({ boards, offset, nextOffset, isClaimingBoardId, isCreatingBoard, isLoading, isOpen, onClaim, onCreate, onRandom, onOffsetChange, onToggle, variant = 'sidebar' }: { boards: AvailableBoard[]; offset: number; nextOffset: number | null; isClaimingBoardId: string | null; isCreatingBoard: boolean; isLoading: boolean; isOpen: boolean; onClaim: (gameId: string) => void; onCreate: () => void; onRandom: () => void; onOffsetChange: (offset: number) => void; onToggle: () => void; variant?: 'sidebar' | 'chooser' }) {
+  const className = variant === 'chooser' ? 'available-boards-sidebar available-boards-sidebar--chooser' : isOpen ? 'available-boards-sidebar' : 'available-boards-sidebar available-boards-sidebar--collapsed';
+  return <aside aria-label="Available boards" className={className}>
     <button aria-expanded={isOpen} className="available-boards-sidebar__toggle" onClick={onToggle} type="button"><span>Available boards</span><i>{isOpen ? '→' : '←'}</i></button>
     {isOpen && <div className="available-boards-sidebar__content">{isLoading ? <p className="muted">Looking for boards…</p> : boards.length ? <><p className="available-boards-sidebar__intro">Choose a board, or let us pick one for you.</p><button className="random-board-button" disabled={isClaimingBoardId !== null || isCreatingBoard} onClick={onRandom} type="button">♞ Choose a random board</button><div className="available-boards__list">{boards.map((board, index) => <button className="available-board" disabled={isClaimingBoardId !== null || isCreatingBoard} key={board.id} onClick={() => onClaim(board.id)} type="button"><span className="available-board__number">{String(offset + index + 1).padStart(2, '0')}</span><span><strong>{new Chess(board.currentFen).turn() === 'w' ? 'White to move' : 'Black to move'}</strong><small>Move {board.currentPly} · {board.playerCount} {board.playerCount === 1 ? 'player' : 'players'}</small></span>{isClaimingBoardId === board.id && <i>Joining…</i>}</button>)}</div><div className="available-boards__controls"><button disabled={offset === 0} onClick={() => onOffsetChange(Math.max(0, offset - 4))} type="button">← Earlier</button><button disabled={nextOffset === null} onClick={() => { if (nextOffset !== null) onOffsetChange(nextOffset); }} type="button">More boards →</button></div></> : <div className="available-boards-sidebar__empty"><p>No playable boards are available right now.</p><button className="create-board-button" disabled={isCreatingBoard} onClick={onCreate} type="button">{isCreatingBoard ? 'Creating board…' : 'Create new board'}</button></div>}</div>}
   </aside>;
@@ -54,13 +55,6 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const [isCreatingBoard, setIsCreatingBoard] = useState(false);
   const [isAvailableBoardsOpen, setIsAvailableBoardsOpen] = useState(true);
   const [hasSubmittedMove, setHasSubmittedMove] = useState(false);
-
-  useEffect(() => {
-    if (!accessToken) return;
-    void gameApiRepository.claimPlayableGame(accessToken)
-      .then(showClaimedBoard)
-      .catch(handleClaimError);
-  }, [accessToken, isAnonymous]);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -121,8 +115,9 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   }
 
   const availableBoardsSidebar = <AvailableBoardsSidebar boards={availableBoards} isClaimingBoardId={isClaimingBoardId} isCreatingBoard={isCreatingBoard} isLoading={isLoadingAvailableBoards} isOpen={isAvailableBoardsOpen} nextOffset={nextAvailableBoardsOffset} offset={availableBoardsOffset} onClaim={claimAvailableBoard} onCreate={createNewBoard} onRandom={claimRandomBoard} onOffsetChange={setAvailableBoardsOffset} onToggle={() => setIsAvailableBoardsOpen((open) => !open)} />;
+  const availableBoardsChooser = <AvailableBoardsSidebar boards={availableBoards} isClaimingBoardId={isClaimingBoardId} isCreatingBoard={isCreatingBoard} isLoading={isLoadingAvailableBoards} isOpen nextOffset={nextAvailableBoardsOffset} offset={availableBoardsOffset} onClaim={claimAvailableBoard} onCreate={createNewBoard} onRandom={claimRandomBoard} onOffsetChange={setAvailableBoardsOffset} onToggle={() => undefined} variant="chooser" />;
 
-  if (!playSession || !game) return <main className="page-shell"><p>{isBoardLimitOpen ? 'Your guest account already has a board.' : 'Preparing your board…'}</p>{isBoardLimitOpen && <AccountModal allowSignIn onClose={() => onNavigate('/')} reason="board-limit" />}</main>;
+  if (!playSession || !game) return <main className="page-shell"><header className="page-header"><button className="back-link" onClick={() => onNavigate('/')} type="button">← Menu</button><div><p className="eyebrow">Community board</p><h1>Choose a board</h1></div></header><section className="board-panel--chooser"><p className="muted">Pick a playable board, or let Collective UnconsChess choose one for you.</p>{availableBoardsChooser}</section>{isBoardLimitOpen && <AccountModal allowSignIn onClose={() => onNavigate('/')} reason="board-limit" />}</main>;
 
   const visibleGame = game;
   const canMove = visibleGame.reservation?.playerId === playerId && remainingSeconds > 0 && visibleGame.status === 'active' && !isSubmittingMove;

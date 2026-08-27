@@ -256,6 +256,7 @@ h1 {
 
 .available-boards { border-top: 1px solid rgba(247, 241, 228, .25); margin-top: 1.5rem; padding-top: 1rem; }
 .available-boards-sidebar { background: #22211d; border-left: 1px solid rgba(247, 241, 228, .2); min-height: 25rem; }
+.available-boards-sidebar--chooser { border-left: 0; margin-top: 1.5rem; min-height: 0; }
 .available-boards-sidebar--collapsed { min-height: 16rem; width: 3.1rem; }
 .available-boards-sidebar__toggle { align-items: center; background: transparent; border: 0; border-bottom: 1px solid rgba(247, 241, 228, .18); color: #f7f1e4; cursor: pointer; display: flex; font-family: Georgia, 'Times New Roman', serif; font-size: 1.08rem; justify-content: space-between; padding: .85rem .75rem; width: 100%; }
 .available-boards-sidebar--collapsed .available-boards-sidebar__toggle { flex-direction: column; gap: .75rem; height: 100%; justify-content: flex-start; }
