@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Chess, type Square } from 'chess.js';
 import { Chessboard, type PieceDropHandlerArgs, type PieceHandlerArgs, type SquareHandlerArgs, type SquareRenderer } from 'react-chessboard';
-import type { Game, PlaySession } from '@/features/game/model/game.types';
+import type { AvailableBoard, Game, PlaySession } from '@/features/game/model/game.types';
 import { getCapturedMaterial, pieceSymbols } from '@/features/game/model/captured-material';
 import { gameApiRepository } from '@/features/game/api/game-api-repository';
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
@@ -39,6 +39,12 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   const [boardOrientation, setBoardOrientation] = useState<'white' | 'black'>('white');
   const [isSaveProgressOpen, setIsSaveProgressOpen] = useState(false);
   const [isBoardLimitOpen, setIsBoardLimitOpen] = useState(false);
+  const [availableBoards, setAvailableBoards] = useState<AvailableBoard[]>([]);
+  const [availableBoardsOffset, setAvailableBoardsOffset] = useState(0);
+  const [nextAvailableBoardsOffset, setNextAvailableBoardsOffset] = useState<number | null>(null);
+  const [availableBoardsRefresh, setAvailableBoardsRefresh] = useState(0);
+  const [isLoadingAvailableBoards, setIsLoadingAvailableBoards] = useState(false);
+  const [isClaimingBoardId, setIsClaimingBoardId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!accessToken) return;
@@ -57,19 +63,40 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       });
   }, [accessToken, isAnonymous]);
 
+  useEffect(() => {
+    if (!accessToken) return;
+    setIsLoadingAvailableBoards(true);
+    void gameApiRepository.getAvailableBoards(accessToken, availableBoardsOffset)
+      .then((page) => {
+        setAvailableBoards(page.boards);
+        setNextAvailableBoardsOffset(page.nextOffset);
+      })
+      .catch(() => {
+        setAvailableBoards([]);
+        setNextAvailableBoardsOffset(null);
+      })
+      .finally(() => setIsLoadingAvailableBoards(false));
+  }, [accessToken, availableBoardsOffset, availableBoardsRefresh]);
+
+  function showClaimedBoard(claimedSession: PlaySession): void {
+    setPlaySession(claimedSession);
+    setGame(claimedSession.game);
+    setBoardOrientation(new Chess(claimedSession.game.currentFen).turn() === 'b' ? 'black' : 'white');
+    setRemainingSeconds(Math.max(0, Math.ceil((new Date(claimedSession.reservation.expiresAt).getTime() - Date.now()) / 1000)));
+    setSelectedSquare(null);
+    setOptimisticFen(null);
+    setHasSubmittedMove(false);
+    setAvailableBoardsOffset(0);
+    setAvailableBoardsRefresh((revision) => revision + 1);
+  }
+
   async function claimNextBoard(): Promise<void> {
     if (!accessToken || isClaimingNextBoard) return;
 
     setIsClaimingNextBoard(true);
     try {
       const claimedSession = await gameApiRepository.claimPlayableGame(accessToken);
-      setPlaySession(claimedSession);
-      setGame(claimedSession.game);
-      setBoardOrientation(new Chess(claimedSession.game.currentFen).turn() === 'b' ? 'black' : 'white');
-      setRemainingSeconds(Math.max(0, Math.ceil((new Date(claimedSession.reservation.expiresAt).getTime() - Date.now()) / 1000)));
-      setSelectedSquare(null);
-      setOptimisticFen(null);
-      setHasSubmittedMove(false);
+      showClaimedBoard(claimedSession);
     } catch (error: unknown) {
       if (isAnonymous && error instanceof Error && error.message === 'Create an account to play another board. You can still view your active board.') {
         setIsBoardLimitOpen(true);
@@ -137,6 +164,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       });
       setGame(updatedGame);
       setHasSubmittedMove(true);
+      setAvailableBoardsRefresh((revision) => revision + 1);
       if (isAnonymous && isFirstMoveByPlayer) setIsSaveProgressOpen(true);
     } catch {
       // Invalid/stale moves quietly return to the last confirmed board position.
@@ -171,6 +199,18 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
       .catch(() => undefined);
   }
 
+  function claimAvailableBoard(gameId: string): void {
+    if (isClaimingBoardId) return;
+    setIsClaimingBoardId(gameId);
+    void gameApiRepository.claimSpecificGame(authenticatedToken, gameId)
+      .then(showClaimedBoard)
+      .catch((error: unknown) => {
+        if (isAnonymous && error instanceof Error && error.message === 'Create an account to play another board. You can still view your active board.') setIsBoardLimitOpen(true);
+        setAvailableBoardsRefresh((revision) => revision + 1);
+      })
+      .finally(() => setIsClaimingBoardId(null));
+  }
+
   const boardOptions = {
     id: `game-${visibleGame.id}`,
     position: optimisticFen ?? visibleGame.currentFen,
@@ -195,7 +235,7 @@ export function PlayPage({ onNavigate }: { onNavigate: (path: AppPath) => void }
   return <main className="page-shell">
     <header className="page-header"><button className="back-link" onClick={() => onNavigate('/')} type="button">← Menu</button><div><p className="eyebrow">Community board</p><h1>Make one move</h1></div></header>
     <section className="play-layout">
-      <aside className="move-panel"><h2>Previous moves</h2>{visibleGame.moves.length === 0 ? <p className="muted">You are starting a new board.</p> : <ol className="move-list">{visibleGame.moves.map((move) => <li key={move.id}><span>{move.ply}. {move.san}</span><small>{playerLabel(move, playerId)}</small></li>)}</ol>}<section aria-label="Captured material" className="captured-material"><h2>Captured material</h2><div className="captured-row"><span>White</span><span aria-label={`Captured by White: ${capturedMaterial.capturedByWhite.length} pieces`} className="captured-pieces">{capturedMaterial.capturedByWhite.length ? capturedMaterial.capturedByWhite.map((piece, index) => <i key={`${piece}-${index}`}>{pieceSymbols.black[piece]}</i>) : '—'}</span></div><div className="captured-row"><span>Black</span><span aria-label={`Captured by Black: ${capturedMaterial.capturedByBlack.length} pieces`} className="captured-pieces">{capturedMaterial.capturedByBlack.length ? capturedMaterial.capturedByBlack.map((piece, index) => <i key={`${piece}-${index}`}>{pieceSymbols.white[piece]}</i>) : '—'}</span></div><p className="material-balance">{capturedMaterial.whiteAdvantage === 0 ? 'Material even' : `${capturedMaterial.whiteAdvantage > 0 ? 'White' : 'Black'} +${Math.abs(capturedMaterial.whiteAdvantage)}`}</p></section></aside>
+      <aside className="move-panel"><h2>Previous moves</h2>{visibleGame.moves.length === 0 ? <p className="muted">You are starting a new board.</p> : <ol className="move-list">{visibleGame.moves.map((move) => <li key={move.id}><span>{move.ply}. {move.san}</span><small>{playerLabel(move, playerId)}</small></li>)}</ol>}<section aria-label="Available boards" className="available-boards"><div className="available-boards__heading"><div><h2>Available boards</h2><p>Choose a board to make your next move.</p></div><span>{availableBoardsOffset + 1}–{availableBoardsOffset + availableBoards.length}</span></div>{isLoadingAvailableBoards ? <p className="muted">Looking for boards…</p> : availableBoards.length ? <div className="available-boards__list">{availableBoards.map((board, index) => <button className="available-board" disabled={isClaimingBoardId !== null} key={board.id} onClick={() => claimAvailableBoard(board.id)} type="button"><span className="available-board__number">{String(availableBoardsOffset + index + 1).padStart(2, '0')}</span><span><strong>{new Chess(board.currentFen).turn() === 'w' ? 'White to move' : 'Black to move'}</strong><small>Move {board.currentPly} · {board.playerCount} {board.playerCount === 1 ? 'player' : 'players'}</small></span>{isClaimingBoardId === board.id && <i>Joining…</i>}</button>)}</div> : <p className="muted">No other boards are ready right now. Use Next board when you are ready to start one.</p>}<div className="available-boards__controls"><button disabled={availableBoardsOffset === 0 || isLoadingAvailableBoards} onClick={() => setAvailableBoardsOffset((offset) => Math.max(0, offset - 4))} type="button">← Earlier</button><button disabled={nextAvailableBoardsOffset === null || isLoadingAvailableBoards} onClick={() => { if (nextAvailableBoardsOffset !== null) setAvailableBoardsOffset(nextAvailableBoardsOffset); }} type="button">More boards →</button></div></section><section aria-label="Captured material" className="captured-material"><h2>Captured material</h2><div className="captured-row"><span>White</span><span aria-label={`Captured by White: ${capturedMaterial.capturedByWhite.length} pieces`} className="captured-pieces">{capturedMaterial.capturedByWhite.length ? capturedMaterial.capturedByWhite.map((piece, index) => <i key={`${piece}-${index}`}>{pieceSymbols.black[piece]}</i>) : '—'}</span></div><div className="captured-row"><span>Black</span><span aria-label={`Captured by Black: ${capturedMaterial.capturedByBlack.length} pieces`} className="captured-pieces">{capturedMaterial.capturedByBlack.length ? capturedMaterial.capturedByBlack.map((piece, index) => <i key={`${piece}-${index}`}>{pieceSymbols.white[piece]}</i>) : '—'}</span></div><p className="material-balance">{capturedMaterial.whiteAdvantage === 0 ? 'Material even' : `${capturedMaterial.whiteAdvantage > 0 ? 'White' : 'Black'} +${Math.abs(capturedMaterial.whiteAdvantage)}`}</p></section></aside>
       <section className="board-panel">
         <div className="move-status"><strong>{canMove ? `Your move — ${formatRemaining(remainingSeconds)} remaining` : visibleGame.status === 'completed' ? 'This game is complete.' : 'Your move has been used. You can stay and watch this board.'}</strong><p>{canMove ? 'Choose one legal move. Once saved, this board becomes read-only for you.' : 'The board remains live as other players contribute.'}</p></div>
         <div className={`${!canMove ? 'chessboard--locked ' : ''}${pieceStyle === 'monochrome' ? 'piece-style--monochrome' : ''}`}><Chessboard options={boardOptions} /></div>

@@ -89,6 +89,18 @@ async function lockEligibleGame(database: Prisma.TransactionClient, playerId: st
   return candidate[0]?.id ?? null;
 }
 
+async function lockSpecificEligibleGame(database: Prisma.TransactionClient, playerId: string, gameId: string): Promise<string | null> {
+  const candidate = await database.$queryRaw<Array<{ id: string }>>`
+    select g.id from public.games g left join public.game_participants gp
+      on gp.game_id = g.id and gp.player_id = ${playerId}::uuid
+    where g.id = ${gameId}::uuid and g.status = 'active' and (gp.player_id is null or (gp.status <> 'timed_out'
+      and (gp.last_move_ply is null or g.current_ply - gp.last_move_ply >= g.move_distance)))
+      and not exists (select 1 from public.game_reservations gr where gr.game_id = g.id and gr.expires_at > now())
+    for update of g skip locked limit 1
+  `;
+  return candidate[0]?.id ?? null;
+}
+
 export const gamesService = {
   async claimPlayableGame(playerId: string, options: { isAnonymous: boolean } = { isAnonymous: false }) {
     return prisma.$transaction(async (database) => {
@@ -118,6 +130,52 @@ export const gamesService = {
       });
       await database.gameReservation.create({ data: { gameId: candidateId, playerId, expiresAt } });
       return serializeGame(await getGameDetails(database, candidateId));
+    });
+  },
+
+  async claimSpecificGame(playerId: string, gameId: string, options: { isAnonymous: boolean } = { isAnonymous: false }) {
+    return prisma.$transaction(async (database) => {
+      await database.$executeRaw`select pg_advisory_xact_lock(hashtext(${playerId}))`;
+      await requirePlayerProfile(database, playerId);
+      await clearExpiredReservations(database);
+      const activeReservation = await database.gameReservation.findFirst({
+        where: { playerId, expiresAt: { gt: new Date() } }, include: { game: { include: gameDetails } },
+      });
+      if (activeReservation) return serializeGame(activeReservation.game);
+      if (options.isAnonymous) {
+        const existingBoard = await database.gameParticipant.findFirst({ where: { playerId }, select: { gameId: true } });
+        if (existingBoard) throw new GameError('Create an account to play another board. You can still view your active board.', 403);
+      }
+      const candidateId = await lockSpecificEligibleGame(database, playerId, gameId);
+      if (!candidateId) throw new GameError('This board was just claimed by another player. Choose another board.', 409);
+      const expiresAt = new Date(Date.now() + RESERVATION_DURATION_MS);
+      await database.gameParticipant.upsert({
+        where: { gameId_playerId: { gameId: candidateId, playerId } }, create: { gameId: candidateId, playerId }, update: {},
+      });
+      await database.gameReservation.create({ data: { gameId: candidateId, playerId, expiresAt } });
+      return serializeGame(await getGameDetails(database, candidateId));
+    });
+  },
+
+  async getAvailableBoards(playerId: string, offset: number) {
+    const pageSize = 4;
+    return prisma.$transaction(async (database) => {
+      await requirePlayerProfile(database, playerId);
+      await clearExpiredReservations(database);
+      const rows = await database.$queryRaw<Array<{ id: string; current_fen: string; current_ply: number; player_count: number; updated_at: Date }>>`
+        select g.id, g.current_fen, g.current_ply, g.updated_at,
+          (select count(*)::int from public.game_participants participants where participants.game_id = g.id) as player_count
+        from public.games g left join public.game_participants gp
+          on gp.game_id = g.id and gp.player_id = ${playerId}::uuid
+        where g.status = 'active' and (gp.player_id is null or (gp.status <> 'timed_out'
+          and (gp.last_move_ply is null or g.current_ply - gp.last_move_ply >= g.move_distance)))
+          and not exists (select 1 from public.game_reservations gr where gr.game_id = g.id and gr.expires_at > now())
+        order by g.updated_at desc limit ${pageSize + 1} offset ${offset}
+      `;
+      const boards = rows.slice(0, pageSize).map((row) => ({
+        id: row.id, currentFen: row.current_fen, currentPly: row.current_ply, playerCount: row.player_count, updatedAt: row.updated_at.toISOString(),
+      }));
+      return { boards, nextOffset: rows.length > pageSize ? offset + pageSize : null };
     });
   },
 

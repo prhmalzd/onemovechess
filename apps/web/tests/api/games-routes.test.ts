@@ -6,16 +6,20 @@ const mocks = vi.hoisted(() => ({
   requireAuthenticatedUser: vi.fn(),
   requirePlayer: vi.fn(),
   claimPlayableGame: vi.fn(),
+  claimSpecificGame: vi.fn(),
+  getAvailableBoards: vi.fn(),
   submitMove: vi.fn(),
 }));
 
 vi.mock('../../server/auth/require-player', () => ({ requireAuthenticatedUser: mocks.requireAuthenticatedUser, requirePlayer: mocks.requirePlayer }));
 vi.mock('../../server/games/games.service', () => ({
   GameError: class GameError extends Error { constructor(message: string, readonly statusCode: number) { super(message); } },
-  gamesService: { claimPlayableGame: mocks.claimPlayableGame, submitMove: mocks.submitMove },
+  gamesService: { claimPlayableGame: mocks.claimPlayableGame, claimSpecificGame: mocks.claimSpecificGame, getAvailableBoards: mocks.getAvailableBoards, submitMove: mocks.submitMove },
 }));
 
 import { POST as claimGame } from '../../app/api/v1/games/claim/route';
+import { POST as claimSpecificGame } from '../../app/api/v1/games/[gameId]/claim/route';
+import { GET as availableBoards } from '../../app/api/v1/games/available/route';
 import { POST as submitMove } from '../../app/api/v1/games/[gameId]/moves/route';
 
 describe('game route handlers', () => {
@@ -47,5 +51,20 @@ describe('game route handlers', () => {
     const response = await claimGame(new Request('http://test/api/v1/games/claim', { method: 'POST' }));
     expect(response.status).toBe(409);
     await expect(response.json()).resolves.toEqual({ message: 'Board unavailable.' });
+  });
+
+  it('claims a board selected from the available-board tray', async () => {
+    mocks.claimSpecificGame.mockResolvedValue({ id: 'game-2' });
+    const response = await claimSpecificGame(new Request('http://test/api/v1/games/game-2/claim', { method: 'POST' }), { params: Promise.resolve({ gameId: '77777777-7777-4777-8777-777777777777' }) });
+    expect(response.status).toBe(200);
+    expect(mocks.claimSpecificGame).toHaveBeenCalledWith('player-1', '77777777-7777-4777-8777-777777777777', { isAnonymous: true });
+  });
+
+  it('returns a page of available boards', async () => {
+    mocks.getAvailableBoards.mockResolvedValue({ boards: [], nextOffset: null });
+    const response = await availableBoards(new Request('http://test/api/v1/games/available?offset=4'));
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({ boards: [], nextOffset: null });
+    expect(mocks.getAvailableBoards).toHaveBeenCalledWith('player-1', 4);
   });
 });

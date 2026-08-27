@@ -1,5 +1,5 @@
 import { apiRequest } from '@/shared/api/api-client';
-import type { Game, PlaySession } from '@/features/game/model/game.types';
+import type { AvailableBoardsPage, Game, PlaySession } from '@/features/game/model/game.types';
 
 export const gameApiRepository = {
   async claimPlayableGame(accessToken: string): Promise<PlaySession> {
@@ -14,6 +14,18 @@ export const gameApiRepository = {
 
   getActiveBoards(accessToken: string): Promise<Game[]> {
     return apiRequest<Game[]>('/v1/games/active-boards', accessToken);
+  },
+
+  getAvailableBoards(accessToken: string, offset = 0): Promise<AvailableBoardsPage> {
+    return apiRequest<AvailableBoardsPage>(`/v1/games/available?offset=${offset}`, accessToken);
+  },
+
+  claimSpecificGame(accessToken: string, gameId: string): Promise<PlaySession> {
+    return apiRequest<Game>(`/v1/games/${gameId}/claim`, accessToken, { method: 'POST' })
+      .then((game) => {
+        if (!game.reservation) throw new Error('The server did not return a move reservation.');
+        return { game, reservation: game.reservation };
+      });
   },
 
   submitMove(input: { accessToken: string; gameId: string; from: string; to: string; promotion?: string; expectedVersion: number }): Promise<Game> {

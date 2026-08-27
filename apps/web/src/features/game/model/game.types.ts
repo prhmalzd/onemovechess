@@ -52,3 +52,16 @@ export interface PlaySession {
   game: Game;
   reservation: MoveReservation;
 }
+
+export interface AvailableBoard {
+  id: GameId;
+  currentFen: string;
+  currentPly: number;
+  playerCount: number;
+  updatedAt: string;
+}
+
+export interface AvailableBoardsPage {
+  boards: AvailableBoard[];
+  nextOffset: number | null;
+}
