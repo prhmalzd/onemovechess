@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 
 export type BoardThemeId = 'classic' | 'ocean' | 'forest' | 'slate';
 export type PieceStyleId = 'classic' | 'monochrome';
+export type MenuStyleId = 'simple' | 'chessboard';
 
 export const boardThemes: Record<BoardThemeId, { name: string; light: string; dark: string }> = {
   classic: { name: 'Classic', light: '#e6d4ae', dark: '#806849' },
@@ -15,15 +16,17 @@ export const boardThemes: Record<BoardThemeId, { name: string; light: string; da
 type StoredPreferences = {
   boardTheme: BoardThemeId;
   pieceStyle: PieceStyleId;
+  menuStyle: MenuStyleId;
 };
 
 type AppPreferences = StoredPreferences & {
   setBoardTheme: (theme: BoardThemeId) => void;
   setPieceStyle: (style: PieceStyleId) => void;
+  setMenuStyle: (style: MenuStyleId) => void;
 };
 
 const STORAGE_KEY = 'one-move-chess.preferences';
-const defaultPreferences: StoredPreferences = { boardTheme: 'classic', pieceStyle: 'classic' };
+const defaultPreferences: StoredPreferences = { boardTheme: 'classic', pieceStyle: 'classic', menuStyle: 'simple' };
 const AppPreferencesContext = createContext<AppPreferences | null>(null);
 
 function loadPreferences(): StoredPreferences {
@@ -33,6 +36,7 @@ function loadPreferences(): StoredPreferences {
     return {
       boardTheme: saved.boardTheme && saved.boardTheme in boardThemes ? saved.boardTheme : 'classic',
       pieceStyle: saved.pieceStyle === 'monochrome' ? 'monochrome' : 'classic',
+      menuStyle: saved.menuStyle === 'chessboard' ? 'chessboard' : 'simple',
     };
   } catch {
     return defaultPreferences;
@@ -53,6 +57,7 @@ export function AppPreferencesProvider({ children }: { children: ReactNode }) {
     ...preferences,
     setBoardTheme: (boardTheme) => update({ ...preferences, boardTheme }),
     setPieceStyle: (pieceStyle) => update({ ...preferences, pieceStyle }),
+    setMenuStyle: (menuStyle) => update({ ...preferences, menuStyle }),
   }}>{children}</AppPreferencesContext.Provider>;
 }
 
