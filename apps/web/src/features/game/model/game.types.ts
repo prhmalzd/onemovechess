@@ -22,6 +22,7 @@ export interface GameParticipant {
   playerName: string;
   status: ParticipantStatus;
   lastMovePly: number | null;
+  assignedColor: 'white' | 'black' | null;
   joinedAt: string;
   timedOutAt: string | null;
 }

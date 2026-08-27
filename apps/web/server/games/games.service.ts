@@ -1,6 +1,7 @@
 import { Chess } from 'chess.js';
 import { Prisma, type PrismaClient } from '@prisma/client';
 import { prisma } from '../database/prisma';
+import { boardTurnColor, canPlayAssignedColor } from './player-color';
 
 const RESERVATION_DURATION_MS = 5 * 60 * 1000;
 
@@ -29,6 +30,7 @@ function serializeGame(game: GameDetails) {
     })),
     participants: game.participants.map((participant) => ({
       playerId: participant.playerId, playerName: participant.player.displayName, status: participant.status, lastMovePly: participant.lastMovePly,
+      assignedColor: participant.assignedColor,
       joinedAt: participant.joinedAt.toISOString(), timedOutAt: participant.timedOutAt?.toISOString() ?? null,
     })),
     reservation: game.reservation ? {
@@ -82,7 +84,8 @@ async function lockEligibleGame(database: Prisma.TransactionClient, playerId: st
     select g.id from public.games g left join public.game_participants gp
       on gp.game_id = g.id and gp.player_id = ${playerId}::uuid
     where g.status = 'active' and (gp.player_id is null or (gp.status <> 'timed_out'
-      and (gp.last_move_ply is null or g.current_ply - gp.last_move_ply >= g.move_distance)))
+      and (gp.last_move_ply is null or g.current_ply - gp.last_move_ply >= g.move_distance)
+      and (gp.assigned_color is null or gp.assigned_color = case split_part(g.current_fen, ' ', 2) when 'w' then 'white' else 'black' end)))
       and not exists (select 1 from public.game_reservations gr where gr.game_id = g.id and gr.expires_at > now())
     order by g.updated_at desc for update of g skip locked limit 1
   `;
@@ -94,7 +97,8 @@ async function lockSpecificEligibleGame(database: Prisma.TransactionClient, play
     select g.id from public.games g left join public.game_participants gp
       on gp.game_id = g.id and gp.player_id = ${playerId}::uuid
     where g.id = ${gameId}::uuid and g.status = 'active' and (gp.player_id is null or (gp.status <> 'timed_out'
-      and (gp.last_move_ply is null or g.current_ply - gp.last_move_ply >= g.move_distance)))
+      and (gp.last_move_ply is null or g.current_ply - gp.last_move_ply >= g.move_distance)
+      and (gp.assigned_color is null or gp.assigned_color = case split_part(g.current_fen, ' ', 2) when 'w' then 'white' else 'black' end)))
       and not exists (select 1 from public.game_reservations gr where gr.game_id = g.id and gr.expires_at > now())
     for update of g skip locked limit 1
   `;
@@ -168,7 +172,8 @@ export const gamesService = {
         from public.games g left join public.game_participants gp
           on gp.game_id = g.id and gp.player_id = ${playerId}::uuid
         where g.status = 'active' and (gp.player_id is null or (gp.status <> 'timed_out'
-          and (gp.last_move_ply is null or g.current_ply - gp.last_move_ply >= g.move_distance)))
+          and (gp.last_move_ply is null or g.current_ply - gp.last_move_ply >= g.move_distance)
+          and (gp.assigned_color is null or gp.assigned_color = case split_part(g.current_fen, ' ', 2) when 'w' then 'white' else 'black' end)))
           and exists (select 1 from public.moves moves where moves.game_id = g.id and moves.player_id <> ${playerId}::uuid)
           and not exists (select 1 from public.game_reservations gr where gr.game_id = g.id and gr.expires_at > now())
         order by g.updated_at desc limit ${pageSize + 1} offset ${offset}
@@ -208,15 +213,18 @@ export const gamesService = {
       const isEligible = participant?.status !== 'timed_out' && (participant?.lastMovePly === null || participant?.lastMovePly === undefined || game.currentPly - participant.lastMovePly >= game.moveDistance);
       if (!isEligible) throw new GameError('You are not eligible to move on this board yet.', 403);
       const chess = new Chess(game.currentFen);
+      const moveColor = boardTurnColor(game.currentFen);
+      const assignedColor = participant?.assignedColor === 'white' || participant?.assignedColor === 'black' ? participant.assignedColor : null;
+      if (!canPlayAssignedColor(assignedColor, game.currentFen)) throw new GameError(`You play ${assignedColor} on this board. Wait for your color's turn.`, 403);
       let move;
       try { move = chess.move({ from: input.from, to: input.to, ...(input.promotion ? { promotion: input.promotion } : {}) }); }
       catch { throw new GameError('That is not a legal chess move.', 422); }
       if (!move) throw new GameError('That is not a legal chess move.', 422);
       const nextPly = game.currentPly + 1;
       const isComplete = chess.isGameOver();
-      await database.move.create({ data: { gameId: game.id, playerId: input.playerId, ply: nextPly, color: move.color === 'w' ? 'white' : 'black', fromSquare: move.from, toSquare: move.to, ...(move.promotion ? { promotion: move.promotion } : {}), san: move.san, fenAfter: chess.fen() } });
+      await database.move.create({ data: { gameId: game.id, playerId: input.playerId, ply: nextPly, color: moveColor, fromSquare: move.from, toSquare: move.to, ...(move.promotion ? { promotion: move.promotion } : {}), san: move.san, fenAfter: chess.fen() } });
       await database.game.update({ where: { id: game.id }, data: { currentFen: chess.fen(), currentPly: nextPly, version: { increment: 1 }, status: isComplete ? 'completed' : 'active', ...(isComplete ? { completedAt: new Date() } : {}), updatedAt: new Date() } });
-      await database.gameParticipant.update({ where: { gameId_playerId: { gameId: game.id, playerId: input.playerId } }, data: { status: 'moved', lastMovePly: nextPly, timedOutAt: null } });
+      await database.gameParticipant.update({ where: { gameId_playerId: { gameId: game.id, playerId: input.playerId } }, data: { status: 'moved', lastMovePly: nextPly, assignedColor: participant?.assignedColor ?? moveColor, timedOutAt: null } });
       await database.gameReservation.delete({ where: { gameId: game.id } });
       return serializeGame(await getGameDetails(database, game.id));
     });

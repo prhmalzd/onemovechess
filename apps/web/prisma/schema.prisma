@@ -65,6 +65,7 @@ model Move {
 model GameParticipant {
   gameId       String    @map("game_id") @db.Uuid
   playerId     String    @map("player_id") @db.Uuid
+  assignedColor String?  @map("assigned_color")
   joinedAt     DateTime  @default(now()) @map("joined_at") @db.Timestamptz(6)
   lastMovePly  Int?      @map("last_move_ply")
   status       String    @default("active")
