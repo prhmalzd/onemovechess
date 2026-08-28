@@ -291,7 +291,8 @@ h1 {
 .available-boards__heading p { color: #c9c2b4; font-size: .72rem; line-height: 1.4; margin: .3rem 0 0; }
 .available-boards__heading > span { color: #c8aa6e; font-size: .65rem; font-weight: 800; letter-spacing: .08em; padding-top: .25rem; white-space: nowrap; }
 .available-boards__list { display: grid; gap: .45rem; margin-top: .8rem; }
-.available-board { align-items: center; background: #22211d; border: 1px solid rgba(247, 241, 228, .14); color: #f7f1e4; cursor: pointer; display: grid; gap: .6rem; grid-template-columns: auto 1fr auto; padding: .6rem; text-align: left; width: 100%; }
+.available-board { align-items: center; background: #22211d; border: 1px solid rgba(247, 241, 228, .14); color: #f7f1e4; cursor: pointer; display: grid; gap: .6rem; grid-template-columns: auto 4rem 1fr auto; padding: .6rem; text-align: left; width: 100%; }
+.available-board__preview { aspect-ratio: 1; overflow: hidden; width: 4rem; }
 .available-board:hover { border-color: #c8aa6e; }
 .available-board:focus-visible { outline: 2px solid #f8e9c8; outline-offset: 2px; }
 .available-board:disabled { cursor: wait; opacity: .7; }
