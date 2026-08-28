@@ -162,7 +162,7 @@ export const gamesService = {
   },
 
   async getAvailableBoards(playerId: string, offset: number) {
-    const pageSize = 4;
+    const pageSize = 2;
     return prisma.$transaction(async (database) => {
       await requirePlayerProfile(database, playerId);
       await clearExpiredReservations(database);
