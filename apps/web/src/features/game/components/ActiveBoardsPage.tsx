@@ -8,11 +8,12 @@ import { BoardPositionSquare, getBoardPositionState } from '@/features/game/comp
 
 type AppPath = '/' | '/play' | '/active-boards' | '/how-to-play' | '/options';
 
-function BoardReview({ game, onBack }: { game: Game; onBack: () => void }) {
+function BoardReview({ game, onBack, playerId }: { game: Game; onBack: () => void; playerId: string | undefined }) {
   const { boardTheme, pieceStyle } = useAppPreferences();
   const theme = boardThemes[boardTheme];
   const [selectedMoveIndex, setSelectedMoveIndex] = useState(game.moves.length - 1);
   const selectedMove = selectedMoveIndex >= 0 ? game.moves[selectedMoveIndex] : null;
+  const playerMoves = game.moves.filter((move) => move.playerId === playerId);
   const position = selectedMove?.fenAfter ?? game.startingFen;
   const positionState = getBoardPositionState(position);
   const squareRenderer: SquareRenderer = ({ children, square }) => <BoardPositionSquare square={square} state={positionState}>{children}</BoardPositionSquare>;
@@ -32,7 +33,7 @@ function BoardReview({ game, onBack }: { game: Game; onBack: () => void }) {
           [selectedMove.to]: { backgroundColor: 'rgba(34, 29, 20, .5)' },
         } : {},
       }} /></div>
-      <aside className="review-moves"><h2>Moves</h2><p className="muted">Choose a move to view the board after it was played.</p><ol className="review-move-list">{game.moves.map((move, index) => <li key={move.id}><button aria-pressed={selectedMoveIndex === index} className={selectedMoveIndex === index ? 'review-move review-move--selected' : 'review-move'} onClick={() => setSelectedMoveIndex(index)} type="button"><span>{move.ply}. {move.san}</span><small>{move.color}</small></button></li>)}</ol></aside>
+      <aside className="review-moves"><h2>Moves</h2><p className="muted">Choose a move to view the board after it was played.</p><p className="player-move">{playerMoves.length ? `Your moves: ${playerMoves.map((move) => `${move.ply}. ${move.san}`).join(' · ')}` : 'You did not make a move on this board.'}</p><ol className="review-move-list">{game.moves.map((move, index) => <li key={move.id}><button aria-pressed={selectedMoveIndex === index} className={selectedMoveIndex === index ? 'review-move review-move--selected' : 'review-move'} onClick={() => setSelectedMoveIndex(index)} type="button"><span>{move.ply}. {move.san}</span><small>{move.playerId === playerId ? `You · ${move.color}` : move.color}</small></button></li>)}</ol></aside>
     </section>
   </main>;
 }
@@ -76,7 +77,7 @@ export function ActiveBoardsPage({ onNavigate }: { onNavigate: (path: AppPath) =
     return filter === 'all' || (filter === 'played' ? hasPlayed : !hasPlayed);
   });
 
-  if (reviewGame) return <BoardReview game={reviewGame} onBack={() => setReviewGame(null)} />;
+  if (reviewGame) return <BoardReview game={reviewGame} onBack={() => setReviewGame(null)} playerId={playerId} />;
 
   return <main className="page-shell">
     <header className="page-header"><button className="back-link" onClick={() => onNavigate('/')} type="button">← Menu</button><div><p className="eyebrow">Read-only</p><h1>Active boards</h1></div></header>
