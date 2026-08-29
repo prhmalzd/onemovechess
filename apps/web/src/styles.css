@@ -16,6 +16,8 @@ body {
   min-height: 100dvh;
   overflow-x: hidden;
   overscroll-behavior-y: none;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 button { touch-action: manipulation; }
