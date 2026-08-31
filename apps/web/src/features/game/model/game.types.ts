@@ -67,3 +67,18 @@ export interface AvailableBoardsPage {
   boards: AvailableBoard[];
   nextOffset: number | null;
 }
+
+export interface PlayerNotification {
+  id: string;
+  gameId: GameId;
+  moveId: string | null;
+  title: string;
+  body: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface NotificationsPage {
+  notifications: PlayerNotification[];
+  unreadCount: number;
+}

@@ -1,5 +1,5 @@
 import { apiRequest } from '@/shared/api/api-client';
-import type { AvailableBoardsPage, Game, PlaySession } from '@/features/game/model/game.types';
+import type { AvailableBoardsPage, Game, NotificationsPage, PlaySession } from '@/features/game/model/game.types';
 
 export const gameApiRepository = {
   async claimPlayableGame(accessToken: string): Promise<PlaySession> {
@@ -22,6 +22,14 @@ export const gameApiRepository = {
 
   setBoardWatch(accessToken: string, gameId: string, isWatched: boolean): Promise<{ gameId: string; isWatched: boolean }> {
     return apiRequest<{ gameId: string; isWatched: boolean }>(`/v1/games/${gameId}/watch`, accessToken, { method: isWatched ? 'PUT' : 'DELETE' });
+  },
+
+  getNotifications(accessToken: string): Promise<NotificationsPage> {
+    return apiRequest<NotificationsPage>('/v1/notifications', accessToken);
+  },
+
+  markNotificationRead(accessToken: string, notificationId: string): Promise<{ id: string; isRead: boolean }> {
+    return apiRequest<{ id: string; isRead: boolean }>(`/v1/notifications/${notificationId}/read`, accessToken, { method: 'PATCH' });
   },
 
   getAvailableBoards(accessToken: string, offset = 0): Promise<AvailableBoardsPage> {

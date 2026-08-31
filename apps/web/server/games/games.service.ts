@@ -253,8 +253,10 @@ export const gamesService = {
       if (!move) throw new GameError('That is not a legal chess move.', 422);
       const nextPly = game.currentPly + 1;
       const isComplete = chess.isGameOver();
-      await database.move.create({ data: { gameId: game.id, playerId: input.playerId, ply: nextPly, color: moveColor, fromSquare: move.from, toSquare: move.to, ...(move.promotion ? { promotion: move.promotion } : {}), san: move.san, fenAfter: chess.fen() } });
+      const savedMove = await database.move.create({ data: { gameId: game.id, playerId: input.playerId, ply: nextPly, color: moveColor, fromSquare: move.from, toSquare: move.to, ...(move.promotion ? { promotion: move.promotion } : {}), san: move.san, fenAfter: chess.fen() } });
       await database.game.update({ where: { id: game.id }, data: { currentFen: chess.fen(), currentPly: nextPly, version: { increment: 1 }, status: isComplete ? 'completed' : 'active', ...(isComplete ? { completedAt: new Date() } : {}), updatedAt: new Date() } });
+      const watchers = await database.boardWatch.findMany({ where: { gameId: game.id, playerId: { not: input.playerId } }, select: { playerId: true } });
+      if (watchers.length) await database.playerNotification.createMany({ data: watchers.map((watch) => ({ playerId: watch.playerId, gameId: game.id, moveId: savedMove.id, title: `Board ${game.id.slice(-5)} advanced`, body: `Another player made ${nextPly}. ${move.san}.` })) });
       await database.gameParticipant.update({ where: { gameId_playerId: { gameId: game.id, playerId: input.playerId } }, data: { status: 'moved', lastMovePly: nextPly, assignedColor: participant?.assignedColor ?? moveColor, timedOutAt: null } });
       await database.gameReservation.delete({ where: { gameId: game.id } });
       return serializeGame(await getGameDetails(database, game.id));
