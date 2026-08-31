@@ -16,6 +16,14 @@ export const gameApiRepository = {
     return apiRequest<Game[]>('/v1/games/active-boards', accessToken);
   },
 
+  getWatchedBoards(accessToken: string): Promise<Game[]> {
+    return apiRequest<Game[]>('/v1/games/watched', accessToken);
+  },
+
+  setBoardWatch(accessToken: string, gameId: string, isWatched: boolean): Promise<{ gameId: string; isWatched: boolean }> {
+    return apiRequest<{ gameId: string; isWatched: boolean }>(`/v1/games/${gameId}/watch`, accessToken, { method: isWatched ? 'PUT' : 'DELETE' });
+  },
+
   getAvailableBoards(accessToken: string, offset = 0): Promise<AvailableBoardsPage> {
     return apiRequest<AvailableBoardsPage>(`/v1/games/available?offset=${offset}`, accessToken);
   },

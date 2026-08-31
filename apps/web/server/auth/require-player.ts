@@ -20,6 +20,12 @@ export async function requirePlayer(request: Request): Promise<string> {
   return (await requireAuthenticatedUser(request)).id;
 }
 
+export async function requireRegisteredPlayer(request: Request): Promise<string> {
+  const user = await requireAuthenticatedUser(request);
+  if (user.is_anonymous) throw new ApiError('Create an account to watch boards.', 403);
+  return user.id;
+}
+
 export async function requireAnonymousPlayer(request: Request): Promise<string> {
   const user = await requireAuthenticatedUser(request);
   if (!user.is_anonymous) throw new ApiError('This account has already been created.', 409);

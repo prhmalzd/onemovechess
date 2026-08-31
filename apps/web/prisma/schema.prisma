@@ -18,6 +18,7 @@ model Player {
   moves           Move[]
   participations  GameParticipant[]
   reservations    GameReservation[]
+  boardWatches    BoardWatch[]
 
   @@map("players")
 }
@@ -38,6 +39,7 @@ model Game {
   moves          Move[]
   participants   GameParticipant[]
   reservation    GameReservation?
+  boardWatches   BoardWatch[]
 
   @@index([status, updatedAt], map: "games_status_updated_at_idx")
   @@map("games")
@@ -88,4 +90,16 @@ model GameReservation {
 
   @@index([expiresAt], map: "game_reservations_expires_at_idx")
   @@map("game_reservations")
+}
+
+model BoardWatch {
+  playerId  String   @map("player_id") @db.Uuid
+  gameId    String   @map("game_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  player    Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@id([playerId, gameId])
+  @@index([playerId], map: "board_watches_player_id_idx")
+  @@map("board_watches")
 }

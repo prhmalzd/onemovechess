@@ -8,7 +8,7 @@ type CaptchaChallenge = { puzzle: { piece: string; pieceName: string; from: stri
 
 const captchaSquares = ['a5', 'b5', 'c5', 'd5', 'e5', 'a4', 'b4', 'c4', 'd4', 'e4', 'a3', 'b3', 'c3', 'd3', 'e3', 'a2', 'b2', 'c2', 'd2', 'e2', 'a1', 'b1', 'c1', 'd1', 'e1'];
 
-export function AccountModal({ allowSignIn, onClose, reason }: { allowSignIn: boolean; onClose: () => void; reason?: 'board-limit' }) {
+export function AccountModal({ allowSignIn, onClose, onAuthenticated, reason }: { allowSignIn: boolean; onClose: () => void; onAuthenticated?: () => void; reason?: 'board-limit' }) {
   const { createUsernameAccount, signInWithUsername } = useSupabaseAuth();
   const [mode, setMode] = useState<Mode>('create');
   const [username, setUsername] = useState('');
@@ -75,7 +75,8 @@ export function AccountModal({ allowSignIn, onClose, reason }: { allowSignIn: bo
     try {
       if (isCreating && captcha) await createUsernameAccount({ username: normalizedUsername, password, captchaToken: captcha.token, captchaSolution: captcha.puzzle.to });
       else await signInWithUsername({ username: normalizedUsername, password });
-      onClose();
+      if (onAuthenticated) onAuthenticated();
+      else onClose();
     } catch (authenticationError: unknown) {
       setError(authenticationError instanceof Error ? authenticationError.message : 'Authentication could not be completed.');
     } finally {

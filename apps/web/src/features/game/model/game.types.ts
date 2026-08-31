@@ -45,6 +45,7 @@ export interface Game {
   moves: MoveRecord[];
   participants: GameParticipant[];
   reservation: MoveReservation | null;
+  isWatched?: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -18,7 +18,7 @@ export class GameError extends Error {
   constructor(message: string, readonly statusCode: number) { super(message); }
 }
 
-function serializeGame(game: GameDetails) {
+function serializeGame(game: GameDetails, options: { isWatched?: boolean } = {}) {
   return {
     id: game.id, creatorId: game.creatorId, status: game.status, startingFen: game.startingFen,
     currentFen: game.currentFen, currentPly: game.currentPly, moveDistance: game.moveDistance,
@@ -37,6 +37,7 @@ function serializeGame(game: GameDetails) {
       playerId: game.reservation.playerId, reservedAt: game.reservation.reservedAt.toISOString(),
       expiresAt: game.reservation.expiresAt.toISOString(),
     } : null,
+    ...(options.isWatched !== undefined ? { isWatched: options.isWatched } : {}),
   };
 }
 
@@ -195,8 +196,38 @@ export const gamesService = {
   async getActiveBoards(playerId: string) {
     return prisma.$transaction(async (database) => {
       await clearExpiredReservations(database);
-      const games = await database.game.findMany({ where: { participants: { some: { playerId } } }, orderBy: { updatedAt: 'desc' }, include: gameDetails });
-      return games.map(serializeGame);
+      const [games, watches] = await Promise.all([
+        database.game.findMany({ where: { participants: { some: { playerId } } }, orderBy: { updatedAt: 'desc' }, include: gameDetails }),
+        database.boardWatch.findMany({ where: { playerId }, select: { gameId: true } }),
+      ]);
+      const watchedGameIds = new Set(watches.map((watch) => watch.gameId));
+      return games.map((game) => serializeGame(game, { isWatched: watchedGameIds.has(game.id) }));
+    });
+  },
+
+  async getWatchedBoards(playerId: string) {
+    const watches = await prisma.boardWatch.findMany({
+      where: { playerId },
+      orderBy: { game: { updatedAt: 'desc' } },
+      include: { game: { include: gameDetails } },
+    });
+    return watches.map((watch) => serializeGame(watch.game, { isWatched: true }));
+  },
+
+  async setBoardWatch(playerId: string, gameId: string, isWatched: boolean) {
+    return prisma.$transaction(async (database) => {
+      const participant = await database.gameParticipant.findUnique({ where: { gameId_playerId: { gameId, playerId } }, select: { gameId: true } });
+      if (!participant) throw new GameError('You can only watch boards you have joined.', 403);
+      if (isWatched) {
+        await database.boardWatch.upsert({
+          where: { playerId_gameId: { playerId, gameId } },
+          create: { playerId, gameId },
+          update: {},
+        });
+      } else {
+        await database.boardWatch.deleteMany({ where: { playerId, gameId } });
+      }
+      return { gameId, isWatched };
     });
   },
 
