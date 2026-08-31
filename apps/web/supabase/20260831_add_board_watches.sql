@@ -9,3 +9,7 @@ create table if not exists public.board_watches (
 );
 
 create index if not exists board_watches_player_id_idx on public.board_watches (player_id);
+
+-- The app accesses watches through authenticated Next.js route handlers and
+-- Prisma, never directly from the browser through Supabase's data API.
+alter table public.board_watches enable row level security;
