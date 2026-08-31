@@ -19,7 +19,10 @@ function BoardReview({ game, onBack, playerId }: { game: Game; onBack: () => voi
   const playerMoves = game.moves.filter((move) => move.playerId === playerId);
   const position = selectedMove?.fenAfter ?? game.startingFen;
   const positionState = getBoardPositionState(position);
-  const squareRenderer: SquareRenderer = ({ children, square }) => <BoardPositionSquare square={square} state={positionState}>{children}</BoardPositionSquare>;
+  const squareRenderer: SquareRenderer = ({ children, square }) => {
+    const isLastMoveSquare = selectedMove && (square === selectedMove.from || square === selectedMove.to);
+    return <BoardPositionSquare overlay={isLastMoveSquare ? <span aria-label={square === selectedMove.to ? 'Last move destination' : 'Last move origin'} className={square === selectedMove.to ? 'last-move-highlight last-move-highlight--destination' : 'last-move-highlight'} /> : undefined} square={square} state={positionState}>{children}</BoardPositionSquare>;
+  };
 
   return <main className="page-shell">
     <header className="page-header"><button className="back-link" onClick={onBack} type="button">← Boards</button><div><p className="eyebrow">Move replay</p><h1>Board {game.id.slice(-5)}</h1></div></header>
@@ -31,10 +34,6 @@ function BoardReview({ game, onBack, playerId }: { game: Game; onBack: () => voi
         darkSquareStyle: { backgroundColor: theme.dark },
         lightSquareStyle: { backgroundColor: theme.light },
         squareRenderer,
-        squareStyles: selectedMove ? {
-          [selectedMove.from]: { backgroundColor: 'rgba(34, 29, 20, .5)' },
-          [selectedMove.to]: { backgroundColor: 'rgba(34, 29, 20, .5)' },
-        } : {},
       }} /></div>
       <aside className="review-moves"><h2>Moves</h2><p className="muted">Choose a move to view the board after it was played.</p><p className="player-move">{playerMoves.length ? `Your moves: ${playerMoves.map((move) => `${move.ply}. ${move.san}`).join(' · ')}` : 'You did not make a move on this board.'}</p><ol className="review-move-list">{game.moves.map((move, index) => <li key={move.id}><button aria-pressed={selectedMoveIndex === index} className={selectedMoveIndex === index ? 'review-move review-move--selected' : 'review-move'} onClick={() => setSelectedMoveIndex(index)} type="button"><span>{move.ply}. {move.san}</span><small>{move.playerId === playerId ? `You · ${move.color}` : move.color}</small></button></li>)}</ol></aside>
     </section>
