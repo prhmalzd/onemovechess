@@ -1,0 +1,1 @@
+declare module 'stockfish' { const createEngine: (flavor: string) => Promise<{ listener?: (line: string) => void; sendCommand: (command: string) => void; terminate?: () => void }>; export default createEngine; }

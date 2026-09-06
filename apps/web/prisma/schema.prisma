@@ -20,6 +20,8 @@ model Player {
   reservations    GameReservation[]
   boardWatches    BoardWatch[]
   notifications   PlayerNotification[]
+  moveAnalyses    MoveAnalysis[]
+  analysisEntitlement AnalysisEntitlement?
 
   @@map("players")
 }
@@ -42,6 +44,8 @@ model Game {
   reservation    GameReservation?
   boardWatches   BoardWatch[]
   notifications  PlayerNotification[]
+  analyses       GameAnalysis[]
+  moveAnalyses   MoveAnalysis[]
 
   @@index([status, updatedAt], map: "games_status_updated_at_idx")
   @@map("games")
@@ -62,6 +66,7 @@ model Move {
   game        Game     @relation(fields: [gameId], references: [id])
   player      Player   @relation(fields: [playerId], references: [id])
   notifications PlayerNotification[]
+  moveAnalyses MoveAnalysis[]
 
   @@unique([gameId, ply], map: "moves_game_ply_unique")
   @@map("moves")
@@ -122,4 +127,63 @@ model PlayerNotification {
 
   @@index([playerId, createdAt], map: "player_notifications_player_created_at_idx")
   @@map("player_notifications")
+}
+
+model GameAnalysis {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  gameId        String         @map("game_id") @db.Uuid
+  requestedById String         @map("requested_by_id") @db.Uuid
+  status        String         @default("pending")
+  analysisKind  String         @default("basic") @map("analysis_kind")
+  engineVersion String         @map("engine_version")
+  depth         Int
+  errorMessage  String?        @map("error_message")
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  completedAt   DateTime?      @map("completed_at") @db.Timestamptz(6)
+  game          Game           @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  moveAnalyses  MoveAnalysis[]
+
+  @@unique([gameId, analysisKind, engineVersion, depth], map: "game_analyses_game_kind_engine_depth_key")
+  @@index([gameId], map: "game_analyses_game_id_idx")
+  @@map("game_analyses")
+}
+
+model MoveAnalysis {
+  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  analysisId         String       @map("analysis_id") @db.Uuid
+  gameId             String       @map("game_id") @db.Uuid
+  moveId             String       @map("move_id") @db.Uuid
+  ply                Int
+  playerId           String       @map("player_id") @db.Uuid
+  fenBefore          String       @map("fen_before")
+  fenAfter           String       @map("fen_after")
+  playedMove         String       @map("played_move")
+  bestMove           String       @map("best_move")
+  principalVariation Json         @map("principal_variation")
+  evaluationBefore   Float        @map("evaluation_before")
+  evaluationAfter    Float        @map("evaluation_after")
+  impact             Float
+  classification     String
+  depth              Int
+  createdAt          DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  analysis           GameAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  game               Game         @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  move               Move         @relation(fields: [moveId], references: [id], onDelete: Cascade)
+  player             Player       @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([analysisId, moveId], map: "move_analyses_analysis_move_key")
+  @@index([gameId, ply], map: "move_analyses_game_id_ply_idx")
+  @@index([playerId], map: "move_analyses_player_id_idx")
+  @@map("move_analyses")
+}
+
+model AnalysisEntitlement {
+  playerId            String   @id @map("player_id") @db.Uuid
+  basicAnalysisUsed   Boolean  @default(false) @map("basic_analysis_used")
+  deepAnalysisCredits Int      @default(0) @map("deep_analysis_credits")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  player              Player   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@map("analysis_entitlements")
 }

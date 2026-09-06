@@ -82,3 +82,6 @@ export interface NotificationsPage {
   notifications: PlayerNotification[];
   unreadCount: number;
 }
+
+export interface MoveAnalysisResult { moveId: string; ply: number; playerId: string; playedMove: string; bestMove: string; evaluationBefore: number; evaluationAfter: number; impact: number; classification: string; }
+export interface GameAnalysisResult { id: string; status: 'pending' | 'running' | 'completed' | 'failed'; errorMessage: string | null; depth: number; moveAnalyses: MoveAnalysisResult[]; }

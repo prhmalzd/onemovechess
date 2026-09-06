@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Chessboard, type SquareRenderer } from 'react-chessboard';
-import type { Game } from '@/features/game/model/game.types';
+import type { Game, GameAnalysisResult } from '@/features/game/model/game.types';
 import { gameApiRepository } from '@/features/game/api/game-api-repository';
 import { useSupabaseAuth } from '@/app/providers/SupabaseAuthProvider';
 import { boardThemes, useAppPreferences } from '@/app/providers/AppPreferencesProvider';
@@ -11,7 +11,7 @@ import { filterActiveBoards, getBoardRecency, getPlayerLastMove, type ActiveBoar
 
 type AppPath = '/' | '/play' | '/active-boards' | '/how-to-play' | '/options';
 
-function BoardReview({ game, onBack, playerId }: { game: Game; onBack: () => void; playerId: string | undefined }) {
+function BoardReview({ game, onBack, playerId, accessToken, isAnonymous }: { game: Game; onBack: () => void; playerId: string | undefined; accessToken: string | undefined; isAnonymous: boolean }) {
   const { boardTheme, pieceStyle } = useAppPreferences();
   const theme = boardThemes[boardTheme];
   const [selectedMoveIndex, setSelectedMoveIndex] = useState(game.moves.length - 1);
@@ -19,6 +19,10 @@ function BoardReview({ game, onBack, playerId }: { game: Game; onBack: () => voi
   const playerMoves = game.moves.filter((move) => move.playerId === playerId);
   const position = selectedMove?.fenAfter ?? game.startingFen;
   const positionState = getBoardPositionState(position);
+  const [analysis, setAnalysis] = useState<GameAnalysisResult | null>(null);
+  const [analysisMessage, setAnalysisMessage] = useState<string | null>(null);
+  useEffect(() => { if (!accessToken || isAnonymous || game.status !== 'completed') return; let current = true; const load = () => gameApiRepository.getAnalysis(accessToken, game.id).then((result) => { if (current) setAnalysis(result); }).catch(() => undefined); void load(); const timer = window.setInterval(load, 5000); return () => { current = false; window.clearInterval(timer); }; }, [accessToken, game.id, game.status, isAnonymous]);
+  async function requestAnalysis(): Promise<void> { if (!accessToken) return; setAnalysisMessage('Starting analysis…'); try { await gameApiRepository.requestAnalysis(accessToken, game.id); setAnalysisMessage('Analysis is running. This page will update automatically.'); } catch (error) { setAnalysisMessage(error instanceof Error ? error.message : 'Analysis could not start.'); } }
   const squareRenderer: SquareRenderer = ({ children, square }) => {
     const isLastMoveSquare = selectedMove && (square === selectedMove.from || square === selectedMove.to);
     return <BoardPositionSquare overlay={isLastMoveSquare ? <span aria-label={square === selectedMove.to ? 'Last move destination' : 'Last move origin'} className={square === selectedMove.to ? 'last-move-highlight last-move-highlight--destination' : 'last-move-highlight'} /> : undefined} square={square} state={positionState}>{children}</BoardPositionSquare>;
@@ -35,7 +39,7 @@ function BoardReview({ game, onBack, playerId }: { game: Game; onBack: () => voi
         lightSquareStyle: { backgroundColor: theme.light },
         squareRenderer,
       }} /></div>
-      <aside className="review-moves"><h2>Moves</h2><p className="muted">Choose a move to view the board after it was played.</p><p className="player-move">{playerMoves.length ? `Your moves: ${playerMoves.map((move) => `${move.ply}. ${move.san}`).join(' · ')}` : 'You did not make a move on this board.'}</p><ol className="review-move-list">{game.moves.map((move, index) => <li key={move.id}><button aria-pressed={selectedMoveIndex === index} className={selectedMoveIndex === index ? 'review-move review-move--selected' : 'review-move'} onClick={() => setSelectedMoveIndex(index)} type="button"><span>{move.ply}. {move.san}</span><small>{move.playerId === playerId ? `You · ${move.color}` : move.color}</small></button></li>)}</ol></aside>
+      <aside className="review-moves"><h2>Moves</h2><p className="muted">Choose a move to view the board after it was played.</p>{game.status === 'completed' && !isAnonymous && <section className="analysis-summary"><button className="secondary-action" disabled={Boolean(analysis && analysis.status !== 'failed')} onClick={() => { void requestAnalysis(); }} type="button">{analysis?.status === 'completed' ? 'Analysis complete' : analysis?.status === 'running' ? 'Analyzing…' : 'Analyze game'}</button>{analysisMessage && <p className="muted">{analysisMessage}</p>}{analysis?.status === 'completed' && <><h3>Your contribution</h3>{analysis.moveAnalyses.filter((item) => item.playerId === playerId).slice(0, 4).map((item) => <p key={item.moveId}><strong>{item.ply}. {item.classification}</strong> · {item.evaluationBefore.toFixed(1)} → {item.evaluationAfter.toFixed(1)} · impact {item.impact >= 0 ? '+' : ''}{item.impact.toFixed(1)}<small> Best: {item.bestMove}</small></p>)}</>}</section>}<p className="player-move">{playerMoves.length ? `Your moves: ${playerMoves.map((move) => `${move.ply}. ${move.san}`).join(' · ')}` : 'You did not make a move on this board.'}</p><ol className="review-move-list">{game.moves.map((move, index) => <li key={move.id}><button aria-pressed={selectedMoveIndex === index} className={selectedMoveIndex === index ? 'review-move review-move--selected' : 'review-move'} onClick={() => setSelectedMoveIndex(index)} type="button"><span>{move.ply}. {move.san}</span><small>{move.playerId === playerId ? `You · ${move.color}` : move.color}</small></button></li>)}</ol></aside>
     </section>
   </main>;
 }
@@ -113,7 +117,7 @@ export function ActiveBoardsPage({ onNavigate }: { onNavigate: (path: AppPath) =
       .finally(() => setIsSavingWatch(null));
   }
 
-  if (reviewGame) return <BoardReview game={reviewGame} onBack={() => setReviewGame(null)} playerId={playerId} />;
+  if (reviewGame) return <BoardReview accessToken={accessToken} game={reviewGame} isAnonymous={isAnonymous} onBack={() => setReviewGame(null)} playerId={playerId} />;
 
   return <main className="page-shell">
     <header className="page-header"><button className="back-link" onClick={() => onNavigate('/')} type="button">← Menu</button><div><p className="eyebrow">Read-only</p><h1>Active boards</h1></div></header>

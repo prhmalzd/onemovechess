@@ -482,6 +482,10 @@ h1 {
 .review-move { align-items: center; background: transparent; border: 0; color: #d8d2c4; cursor: pointer; display: flex; font-family: Inter, Arial, sans-serif; font-size: .85rem; justify-content: space-between; padding: .7rem .5rem; text-align: left; width: 100%; }
 .review-move small { color: #c8aa6e; text-transform: capitalize; }
 .review-move--selected { background: rgba(200, 170, 110, .18); color: #f7f1e4; }
+.analysis-summary { border-bottom: 1px solid rgba(247, 241, 228, .16); display: grid; gap: .55rem; margin: 1rem 0; padding-bottom: 1rem; }
+.analysis-summary h3 { font-size: 1rem; font-weight: 400; margin: .3rem 0 0; }
+.analysis-summary p { color: #d8d2c4; font: .76rem/1.45 Inter, Arial, sans-serif; margin: 0; }
+.analysis-summary small { color: #c8aa6e; display: block; margin-top: .15rem; }
 
 @media (max-width: 420px) {
   h1 { font-size: clamp(2.35rem, 13vw, 3.2rem); }
