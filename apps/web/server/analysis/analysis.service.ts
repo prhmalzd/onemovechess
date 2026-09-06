@@ -14,8 +14,9 @@ export const analysisService = {
       const game = await db.game.findUnique({ where: { id: gameId }, select: { status: true, participants: { where: { playerId }, select: { playerId: true } } } });
       if (!game || game.participants.length === 0) throw new GameError('You can only analyze a board you joined.', 403);
       if (game.status !== 'completed') throw new GameError('Analysis is available after the game is complete.', 409);
-      const entitlement = await db.analysisEntitlement.upsert({ where: { playerId }, create: { playerId, basicAnalysisUsed: true }, update: {} });
+      const entitlement = await db.analysisEntitlement.upsert({ where: { playerId }, create: { playerId, basicAnalysisUsed: false }, update: {} });
       if (entitlement.basicAnalysisUsed) throw new GameError('Your free basic analysis has already been used.', 403);
+      await db.analysisEntitlement.update({ where: { playerId }, data: { basicAnalysisUsed: true, updatedAt: new Date() } });
       return db.gameAnalysis.create({ data: { gameId, requestedById: playerId, engineVersion: stockfishService.engineVersion, depth: basicDepth } });
     });
   },
